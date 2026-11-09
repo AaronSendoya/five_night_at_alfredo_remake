@@ -1,0 +1,237 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Alfredo
+{
+    /// <summary>
+    /// Movimiento del jugador, carrera con resistencia, esconderse y paso entre zonas.
+    /// Valores del original (obj_jugador): caminar 6 px/cuadro, correr x1.8, resistencia 220,
+    /// gasto 1.3 y recuperación 0.7 por cuadro, 2 s de agotamiento.
+    /// </summary>
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class PlayerController : MonoBehaviour
+    {
+        [SerializeField] SpriteFrameAnimator anim;
+        [SerializeField] DirectionalSprites sprites;
+        [SerializeField] DirectionalSprites runSprites;
+        [SerializeField] Sprite[] hideFrames;
+        [SerializeField] float hideAnimSeconds = 0.3f;
+
+        [Header("Movimiento (píxeles por cuadro del original)")]
+        [SerializeField] float walkSpeedGm = 6f;
+        [SerializeField] float runMultiplier = 1.8f;
+
+        [Header("Resistencia")]
+        [SerializeField] float staminaMax = 220f;
+        [SerializeField] float drainPerFrame = 1.3f;
+        [SerializeField] float recoverPerFrame = 0.7f;
+        [SerializeField] float exhaustedSeconds = 2f;
+
+        [Header("Paso entre zonas")]
+        [SerializeField] float warpFadeSeconds = 0.25f;
+        [SerializeField] float warpFreezeSeconds = 0.5f;
+
+        Rigidbody2D rb;
+        BoxCollider2D body;
+        Vector2 moveInput;
+        float stamina;
+        float exhaustedTimer;
+        float warpCooldown;
+        bool warping;
+        float hideAnim;
+        float stepTimer;
+        readonly HashSet<object> locks = new HashSet<object>();
+
+        public Facing Facing { get; private set; } = Facing.Down;
+        public Vector2 Position => rb != null ? rb.position : (Vector2)transform.position;
+        /// <summary>Centro del cuerpo (los pies están en Position).</summary>
+        public Vector2 BodyCenter => body != null ? Position + body.offset : Position + Vector2.up * 1.9f;
+        Rect BodyRect => body != null ? new Rect(BodyCenter - body.size * 0.5f, body.size) : new Rect(Position, Vector2.one);
+        public bool IsRunning { get; private set; }
+        public bool IsMoving { get; private set; }
+        public bool IsExhausted => exhaustedTimer > 0f;
+        public float Stamina01 => stamina / staminaMax;
+        public bool IsHidden { get; private set; }
+        public HidingSpot CurrentHidingSpot { get; private set; }
+        public Inventory Inventory { get; private set; }
+        public ZoneInfo CurrentZone => MapZones.Instance != null ? MapZones.Instance.NearestZone(Position) : null;
+
+        public event Action<bool> HiddenChanged;
+        public event Action<ZoneInfo> Warped;
+
+        public bool CanMove
+        {
+            get
+            {
+                var gm = GameManager.Instance;
+                return locks.Count == 0 && !IsHidden && !warping && gm != null && gm.IsPlaying;
+            }
+        }
+
+        void Awake()
+        {
+            rb = GetComponent<Rigidbody2D>();
+            body = GetComponent<BoxCollider2D>();
+            Inventory = GetComponent<Inventory>();
+            stamina = staminaMax;
+        }
+
+        public void Lock(object owner) => locks.Add(owner);
+        public void Unlock(object owner) => locks.Remove(owner);
+
+        void Update()
+        {
+            float dt = Time.deltaTime;
+            if (warpCooldown > 0f) warpCooldown -= dt;
+
+            moveInput = CanMove ? TouchInput.Move : Vector2.zero;
+            IsMoving = moveInput.sqrMagnitude > 0.01f;
+
+            bool wantsRun = IsMoving && TouchInput.RunHeld && stamina > 0f && exhaustedTimer <= 0f;
+            if (wantsRun)
+            {
+                stamina -= drainPerFrame * GameUnits.GmFps * dt;
+                if (stamina <= 0f)
+                {
+                    stamina = 0f;
+                    exhaustedTimer = exhaustedSeconds;
+                    wantsRun = false;
+                    AudioManager.PlaySfx(Sfx.Gasp);
+                }
+            }
+            else if (exhaustedTimer <= 0f)
+            {
+                stamina = Mathf.Min(staminaMax, stamina + recoverPerFrame * GameUnits.GmFps * dt);
+            }
+            if (exhaustedTimer > 0f) exhaustedTimer -= dt;
+            IsRunning = wantsRun;
+
+            Facing = FacingUtil.FromVector(moveInput, Facing);
+            UpdateFootsteps(dt);
+            if (hideAnim > 0f)
+            {
+                hideAnim -= dt;
+                if (hideAnim <= 0f && IsHidden) SetVisible(false);
+            }
+            else if (anim != null && !IsHidden)
+            {
+                anim.SetFrames(FramesFor(Facing, IsRunning));
+                anim.fps = IsRunning ? 12f : 8f;
+                anim.Play(IsMoving);
+            }
+
+            if (!warping && warpCooldown <= 0f && !IsHidden)
+            {
+                var warp = Warp.Overlapping(BodyRect);
+                if (warp != null) StartCoroutine(WarpRoutine(warp));
+            }
+        }
+
+        /// <summary>Un paso cada cierto tiempo mientras camina (más rápido y más fuerte al correr).</summary>
+        void UpdateFootsteps(float dt)
+        {
+            if (!IsMoving || IsHidden || warping || !CanMove)
+            {
+                stepTimer = 0f;
+                return;
+            }
+            stepTimer -= dt;
+            if (stepTimer > 0f) return;
+            stepTimer = IsRunning ? 0.2f : 0.34f;
+            AudioManager.PlayStep(IsRunning ? 1f : 0.65f);
+        }
+
+        Sprite[] FramesFor(Facing f, bool running)
+        {
+            if (running && runSprites != null)
+            {
+                var r = runSprites.Get(f);
+                if (r != null && r.Length > 0) return r;
+            }
+            return sprites.Get(f);
+        }
+
+        void FixedUpdate()
+        {
+            float speed = GameUnits.Speed(walkSpeedGm) * (IsRunning ? runMultiplier : 1f);
+            Vector2 dir = moveInput.sqrMagnitude > 1f ? moveInput.normalized : moveInput;
+            rb.linearVelocity = CanMove ? dir * speed : Vector2.zero;
+        }
+
+        IEnumerator WarpRoutine(Warp warp)
+        {
+            warping = true;
+            rb.linearVelocity = Vector2.zero;
+            AudioManager.PlaySfx(Sfx.PassDoor);
+            var fader = ScreenFader.Instance;
+            if (fader != null) yield return fader.FadeOut(warpFadeSeconds);
+            Teleport(warp.destination, warp.arrivalFacing);
+            Warped?.Invoke(CurrentZone);
+            if (fader != null) yield return fader.FadeIn(warpFadeSeconds);
+            yield return new WaitForSeconds(warpFreezeSeconds);
+            warping = false;
+            warpCooldown = 0.75f;
+        }
+
+        public void Teleport(Vector2 position, Facing facing)
+        {
+            rb.position = position;
+            transform.position = position;
+            rb.linearVelocity = Vector2.zero;
+            Facing = facing;
+            if (anim != null) { anim.SetFrames(sprites.Get(facing)); anim.Play(false); }
+            Physics2D.SyncTransforms();
+        }
+
+        public void Hide(HidingSpot spot)
+        {
+            IsHidden = true;
+            CurrentHidingSpot = spot;
+            rb.linearVelocity = Vector2.zero;
+            if (anim != null && hideFrames != null && hideFrames.Length > 0)
+            {
+                // Animación breve de agacharse antes de desaparecer en el escondite.
+                anim.Play(false);
+                anim.SetFrames(hideFrames);
+                anim.fps = hideFrames.Length / hideAnimSeconds;
+                anim.Play(true);
+                hideAnim = hideAnimSeconds;
+            }
+            else SetVisible(false);
+            HiddenChanged?.Invoke(true);
+        }
+
+        public void Unhide(Vector2 exitPosition)
+        {
+            if (!IsHidden) return;
+            IsHidden = false;
+            CurrentHidingSpot = null;
+            hideAnim = 0f;
+            Teleport(exitPosition, Facing);
+            SetVisible(true);
+            HiddenChanged?.Invoke(false);
+        }
+
+        /// <summary>Tras una captura: sale de cualquier escondite y recupera la resistencia.</summary>
+        public void ResetAfterCatch()
+        {
+            if (CurrentHidingSpot != null) CurrentHidingSpot.ForceRelease();
+            IsHidden = false;
+            CurrentHidingSpot = null;
+            SetVisible(true);
+            stamina = staminaMax;
+            exhaustedTimer = 0f;
+            hideAnim = 0f;
+            locks.Clear();
+            StopAllCoroutines();
+            warping = false;
+        }
+
+        void SetVisible(bool visible)
+        {
+            foreach (var r in GetComponentsInChildren<SpriteRenderer>(true)) r.enabled = visible;
+        }
+    }
+}

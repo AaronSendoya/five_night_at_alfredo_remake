@@ -1,0 +1,12 @@
+# ninja log v5
+153	517	8158961065938265	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	ce92370c9a2f4f6a
+521	999	8158961070635149	D:/Principal/RealidadVirtual/five_nights_at_Alfredo/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1z2a2i34/obj/x86_64/libswappywrapper.so	31ba409f13cba901
+55	2621	8158961086893747	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	1b4d997dc54288d5
+73	2698	8158961087643493	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	d08842432700f9e2
+18	2730	8158961088012521	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	c336deb0233d8f3b
+36	2813	8158961088867914	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	f625c32dc1d8f900
+131	2852	8158961089244888	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	73fab816cace4f02
+110	3030	8158961090956176	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	bc38ec8423e94e39
+90	3256	8158961093288226	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	9da4fea64bd57cac
+2	3448	8158961095145354	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	318fcccaf9958e1c
+3448	3710	8158961097769085	D:/Principal/RealidadVirtual/five_nights_at_Alfredo/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1z2a2i34/obj/x86_64/libgame.so	bd08c18431bd9662

@@ -1,0 +1,514 @@
+{
+"sprites": [
+{
+"name": "sp_bonnie_caminar_atras",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_atras_guitarra",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_derecha",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_derecha_guitarra",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_frente",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_frente_guitarra",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_izquierda",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_bonnie_caminar_izquierda_guitarra",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_chica_caminar_atras",
+"w": 48,
+"h": 46,
+"ox": 24,
+"oy": 46,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_chica_caminar_derecha",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_chica_caminar_frente",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_chica_caminar_izquierda",
+"w": 48,
+"h": 48,
+"ox": 0,
+"oy": 0,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_foxy_caminar_atras",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_foxy_caminar_derecha",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_foxy_caminar_frente",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_foxy_caminar_izquierda",
+"w": 48,
+"h": 46,
+"ox": 24,
+"oy": 46,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_freddy_caminar_atras",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_freddy_caminar_derecha",
+"w": 48,
+"h": 47,
+"ox": 24,
+"oy": 47,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_freddy_caminar_frente",
+"w": 48,
+"h": 48,
+"ox": 24,
+"oy": 48,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_freddy_caminar_izquierda",
+"w": 48,
+"h": 46,
+"ox": 24,
+"oy": 46,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_shadow_caminar_atras",
+"w": 32,
+"h": 32,
+"ox": 16,
+"oy": 32,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_shadow_caminar_derecha",
+"w": 32,
+"h": 32,
+"ox": 16,
+"oy": 32,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_shadow_caminar_frente",
+"w": 32,
+"h": 32,
+"ox": 16,
+"oy": 32,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_shadow_caminar_izquierda",
+"w": 32,
+"h": 32,
+"ox": 16,
+"oy": 32,
+"frames": 3,
+"fps": 8.0,
+"group": "Characters"
+},
+{
+"name": "sp_escenario_principal",
+"w": 2816,
+"h": 1536,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_almacen",
+"w": 2816,
+"h": 1536,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_arcade",
+"w": 2816,
+"h": 1536,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_camaras",
+"w": 2816,
+"h": 1536,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_cocina",
+"w": 2816,
+"h": 1536,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_cuarto_secreto",
+"w": 2816,
+"h": 1504,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_deposito",
+"w": 2816,
+"h": 1536,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_menu_principal",
+"w": 2400,
+"h": 1200,
+"ox": 0,
+"oy": 0,
+"frames": 5,
+"fps": 10.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fondo_minijuego",
+"w": 640,
+"h": 480,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_pizzeria_comedor",
+"w": 2816,
+"h": 1536,
+"ox": 1408,
+"oy": 768,
+"frames": 1,
+"fps": 30.0,
+"group": "Backgrounds"
+},
+{
+"name": "sp_fusible_0",
+"w": 30,
+"h": 80,
+"ox": 15,
+"oy": 40,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_fusible_1",
+"w": 30,
+"h": 81,
+"ox": 15,
+"oy": 40,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_interruptor",
+"w": 80,
+"h": 136,
+"ox": 40,
+"oy": 136,
+"frames": 2,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_minijuego",
+"w": 32,
+"h": 32,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_minipizza",
+"w": 64,
+"h": 35,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_panel",
+"w": 200,
+"h": 200,
+"ox": 100,
+"oy": 200,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_telefono",
+"w": 676,
+"h": 369,
+"ox": 338,
+"oy": 184,
+"frames": 1,
+"fps": 10.0,
+"group": "Props"
+},
+{
+"name": "sp_tutorial_camara",
+"w": 616,
+"h": 369,
+"ox": 308,
+"oy": 184,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_tutorial_locker",
+"w": 412,
+"h": 374,
+"ox": 206,
+"oy": 187,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_tutorial_movement",
+"w": 353,
+"h": 295,
+"ox": 176,
+"oy": 147,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_tutorial_stamina",
+"w": 600,
+"h": 100,
+"ox": 300,
+"oy": 50,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "sp_ventilation",
+"w": 120,
+"h": 120,
+"ox": 60,
+"oy": 60,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "spr_bateria_ui",
+"w": 32,
+"h": 40,
+"ox": 0,
+"oy": 0,
+"frames": 4,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "spr_icon_vent",
+"w": 32,
+"h": 32,
+"ox": 16,
+"oy": 16,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "spr_light_beam",
+"w": 200,
+"h": 687,
+"ox": 100,
+"oy": 687,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "spr_linterna_item",
+"w": 64,
+"h": 88,
+"ox": 32,
+"oy": 44,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+},
+{
+"name": "spr_mapa_blueprint",
+"w": 1096,
+"h": 1024,
+"ox": 0,
+"oy": 0,
+"frames": 1,
+"fps": 30.0,
+"group": "Props"
+}
+]
+}

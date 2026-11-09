@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b2bee010e8ee28498f4ca9918c65e0c, type: 3}
+  m_Name: Noche3
+  m_EditorClassIdentifier: 
+  night: 3
+  secondsPerHour: 70
+  hours: 6
+  aiAlfredo: 15
+  aiMatilda: 15
+  aiBongo: 15
+  aiRufus: 15
+  bootAlfredo: 70
+  bootMatilda: 40
+  bootBongo: 30
+  bootRufus: 10
+  maxChases: 4
+  fuseBurnInterval: 85
+  fuseBurnChance: 40
+  startBrokenFuses: 1
+  fuseSpawnSeconds: 25

@@ -1,0 +1,8 @@
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/CMakeFiles/edit_cache.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/CMakeFiles/rebuild_cache.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/GameActivity/CMakeFiles/game.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/GameActivity/CMakeFiles/edit_cache.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/GameActivity/CMakeFiles/rebuild_cache.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/FramePacing/CMakeFiles/swappywrapper.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/FramePacing/CMakeFiles/edit_cache.dir
+D:/Principal/RealidadVirtual/five_nights_at_Alfredo/.utmp/RelWithDebInfo/1z2a2i34/x86_64/FramePacing/CMakeFiles/rebuild_cache.dir
