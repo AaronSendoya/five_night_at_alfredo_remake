@@ -113,6 +113,8 @@ namespace Alfredo
             AiLevel = night.AiLevel(id);
             bootRemaining = night.BootSeconds(id);
             NightSpeed = 1f + 0.10f * Mathf.Max(0, night.night - 1);
+            // Vista: noche 2 = +15 %, noches 3 y 4 = +30 %.
+            senses.NightRange = night.night >= 3 ? 1.3f : night.night == 2 ? 1.15f : 1f;
             patience = PatienceSeconds;
             zoneTimer = 0f; roamTarget = null;
             OnConfigured(night);
@@ -135,6 +137,25 @@ namespace Alfredo
 
         protected virtual void OnResetToHome() { }
 
+        /// <summary>Se llama cada fotograma de juego aunque el animatrónico esté dormido o aún no haya salido.</summary>
+        protected virtual void AlwaysTick(float dt) { }
+
+        /// <summary>
+        /// El jugador hizo demasiado ruido corriendo cerca (misma sala o vecina): va a cazarlo un rato.
+        /// Lo pierde con las mecánicas de siempre (escondite, ventilación, puerta de la oficina).
+        /// </summary>
+        public void HearNoise(float seconds)
+        {
+            if (!IsAwake || player == null || player.IsUndetectable) return;
+            senses.Alerted = true;
+            phase = HuntPhase.Track;
+            trackTimer = Mathf.Max(trackTimer, seconds);
+            if (!IsChasing && director != null && director.RequestChase(this)) IsChasing = true;
+            OnHeardNoise(seconds);
+        }
+
+        protected virtual void OnHeardNoise(float seconds) { }
+
         /// <summary>Solo pruebas: se activa ya, sin esperar.</summary>
         public void SkipBoot() => bootRemaining = 0f;
 
@@ -143,6 +164,7 @@ namespace Alfredo
             var gm = GameManager.Instance;
             if (gm == null || !gm.IsPlaying || DebugFreeze) { motor.Freeze(); return; }
             float dt = Time.deltaTime;
+            AlwaysTick(dt);
 
             if ((AiLevel <= 0 || bootRemaining > 0f) && !ForceAwake)
             {

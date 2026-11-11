@@ -24,11 +24,15 @@ namespace Alfredo
         float graceTimer;
         int closedDoors;
         [SerializeField] float graceAfterChange = 25f;
-        [SerializeField] float loadPerDoor = 0.8f;
-        [SerializeField] float extraChancePerDoor = 8f;
+        [Tooltip("Cuánto acelera cada puerta cerrada la quema de fusibles")]
+        [SerializeField] float loadPerDoor = 1.1f;
+        [SerializeField] float extraChancePerDoor = 10f;
+        [Tooltip("El monitor de cámaras abierto: la mitad que una puerta")]
+        [SerializeField] float loadCameras = 0.55f;
+        [SerializeField] float extraChanceCameras = 5f;
 
         /// <summary>1 = consumo normal; cada puerta cerrada suma carga.</summary>
-        public float Load => 1f + closedDoors * loadPerDoor;
+        public float Load => 1f + closedDoors * loadPerDoor + (CameraMonitor.AnyOpen ? loadCameras : 0f);
         public int ClosedDoors => closedDoors;
         public event Action LoadChanged;
 
@@ -126,7 +130,7 @@ namespace Alfredo
             timer += Time.deltaTime * Load;
             if (timer < burnInterval) return;
             timer = 0f;
-            if (UnityEngine.Random.value * 100f < burnChance + closedDoors * extraChancePerDoor) BurnRandomFuse();
+            if (UnityEngine.Random.value * 100f < burnChance + closedDoors * extraChancePerDoor + (CameraMonitor.AnyOpen ? extraChanceCameras : 0f)) BurnRandomFuse();
         }
 
         void Recompute()

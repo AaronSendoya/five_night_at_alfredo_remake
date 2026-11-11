@@ -60,6 +60,8 @@ namespace Alfredo.EditorTools
             var zoneText = UiFactory.AddText("Zona", hudRt, "", 28, TL, new Vector2(240f, -198f), new Vector2(420f, 36f), TextAnchor.MiddleLeft, UiFactory.MutedText);
             var stLabel = UiFactory.AddText("Resistencia", hudRt, "RESISTENCIA", 24, TL, new Vector2(240f, -244f), new Vector2(420f, 30f), TextAnchor.MiddleLeft, UiFactory.MutedText);
             var stFill = UiFactory.Bar("Barra resistencia", hudRt, TL, new Vector2(220f, -276f), new Vector2(380f, 22f), new Color(0.85f, 0.85f, 0.85f), white);
+            var nzLabel = UiFactory.AddText("Ruido", hudRt, "RUIDO", 24, TL, new Vector2(240f, -398f), new Vector2(420f, 30f), TextAnchor.MiddleLeft, UiFactory.MutedText);
+            var nzFill = UiFactory.Bar("Barra ruido", hudRt, TL, new Vector2(220f, -428f), new Vector2(380f, 22f), new Color(0.3f, 0.85f, 0.35f), white);
             var batGroup = UiFactory.Rect("Bateria", hudRt, TL, TL, new Vector2(220f, -330f), new Vector2(380f, 70f));
             UiFactory.AddText("Etiqueta", batGroup, "BATERÍA", 24, new Vector2(0.5f, 1f), new Vector2(10f, -15f), new Vector2(400f, 30f), TextAnchor.MiddleLeft, UiFactory.MutedText);
             var batFill = UiFactory.Bar("Barra", batGroup, new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(380f, 22f), new Color(0.95f, 0.85f, 0.4f), white);
@@ -134,6 +136,9 @@ namespace Alfredo.EditorTools
             BuilderUtil.SetRef(hud, "zoneText", zoneText);
             BuilderUtil.SetRef(hud, "staminaFill", stFill);
             BuilderUtil.SetRef(hud, "staminaLabel", stLabel);
+            BuilderUtil.SetRef(hud, "noiseFill", nzFill);
+            BuilderUtil.SetRef(hud, "noiseLabel", nzLabel);
+            BuilderUtil.SetRef(hud, "noise", player.GetComponent<NoiseMeter>());
             BuilderUtil.SetRef(hud, "batteryFill", batFill);
             BuilderUtil.SetRef(hud, "batteryGroup", batGroup.gameObject);
             BuilderUtil.SetRef(hud, "airFill", airFill);

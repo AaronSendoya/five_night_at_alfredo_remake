@@ -22,6 +22,8 @@ namespace Alfredo
 
         /// <summary>Lo activa el cerebro mientras persigue o busca.</summary>
         public bool Alerted { get; set; }
+        /// <summary>Multiplicador de alcance de la vista según la noche (lo fija el cerebro).</summary>
+        public float NightRange { get; set; } = 1f;
         public bool CanSeePlayer { get; private set; }
         public bool HeardPlayer { get; private set; }
         public Vector2 LastSeenPosition { get; private set; }
@@ -65,7 +67,7 @@ namespace Alfredo
             if (player == null || player.IsUndetectable || !SameZone(player)) return false;
             Vector2 to = player.Position - motor.Position;
             float dist = to.magnitude;
-            float range = GameUnits.Dist(viewDistancePx) * (Alerted ? alertRangeMultiplier : 1f);
+            float range = GameUnits.Dist(viewDistancePx) * NightRange * (Alerted ? alertRangeMultiplier : 1f);
             if (dist > range) return false;
             if (!Alerted && dist > proximitySense && Vector2.Angle(motor.FacingDir, to) > halfAngle) return false;
             Vector2 eye = Vector2.up * eyeHeight;

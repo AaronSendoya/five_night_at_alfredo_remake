@@ -85,6 +85,7 @@
     <Compile Include="Assets\_Game\Scripts\UI\HudMessages.cs" />
     <Compile Include="Assets\_Game\Scripts\Core\GameUnits.cs" />
     <Compile Include="Assets\_Game\Scripts\Animatronics\AnimatronicDirector.cs" />
+    <Compile Include="Assets\_Game\Scripts\Player\NoiseMeter.cs" />
     <Compile Include="Assets\_Game\Scripts\Doors\OfficeDoor.cs" />
     <Compile Include="Assets\_Game\Scripts\UI\TutorialPress.cs" />
     <Compile Include="Assets\_Game\Scripts\UI\VentView.cs" />

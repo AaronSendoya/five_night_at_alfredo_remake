@@ -15,7 +15,7 @@ namespace Alfredo
         [SerializeField] AnimatronicDirector director;
 
         readonly Dictionary<string, float> nextAllowed = new Dictionary<string, float>();
-        float blackoutTime, flickerTime, doorsTime, playTime, exhaustedTime;
+        float blackoutTime, flickerTime, doorsTime, camTime, playTime, exhaustedTime;
         float check;
 
         void Start()
@@ -51,6 +51,8 @@ namespace Alfredo
             blackoutTime = power.State == PowerState.Off ? blackoutTime + dt : 0f;
             flickerTime = power.State == PowerState.Flickering ? flickerTime + dt : 0f;
             doorsTime = OfficeDoor.ClosedCount > 0 ? doorsTime + dt : 0f;
+            camTime = CameraMonitor.AnyOpen ? camTime + dt : 0f;
+            if (camTime > 12f) Tip("camaras", "Mirar las cámaras también gasta energía (la mitad que una puerta cerrada): los fusibles se queman antes. Míralas solo lo necesario.", 90f);
             exhaustedTime = player.IsExhausted ? exhaustedTime + dt : 0f;
 
             check -= dt;
@@ -66,7 +68,7 @@ namespace Alfredo
             if (blackoutTime > 20f && flashlight != null && flashlight.HasFlashlight)
                 Tip("rufus", "Rufus caza a oscuras: apúntale con la linterna para que vuelva al escenario.", 90f);
             if (flickerTime > 15f) Tip("parpadeo", "Hay un fusible quemado: cámbialo antes de que se vaya toda la luz.", 60f);
-            if (doorsTime > 20f) Tip("puertas", "Las puertas cerradas sobrecargan los fusibles. Ábrelas cuando no las necesites.", 60f);
+            if (doorsTime > 20f) Tip("puertas", "Las puertas cerradas gastan energía: los fusibles se queman antes (cada puerta suma). Ábrelas cuando no las necesites.", 60f);
             if (exhaustedTime > 0.5f) Tip("agotado", "Corre a ratos: si gastas toda la resistencia no podrás correr unos segundos.", 120f);
             if (playTime > 45f && flashlight != null && !flashlight.HasFlashlight)
                 Tip("linterna", "Recoge la linterna en la oficina: la necesitarás cuando se vaya la luz.", 90f);

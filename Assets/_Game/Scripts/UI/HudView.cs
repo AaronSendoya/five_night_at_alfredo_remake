@@ -26,6 +26,9 @@ namespace Alfredo
         [Header("Barras")]
         [SerializeField] Image staminaFill;
         [SerializeField] Text staminaLabel;
+        [SerializeField] Image noiseFill;
+        [SerializeField] Text noiseLabel;
+        [SerializeField] NoiseMeter noise;
         [SerializeField] Image batteryFill;
         [SerializeField] GameObject batteryGroup;
         [SerializeField] Image airFill;
@@ -55,6 +58,7 @@ namespace Alfredo
         static readonly Color Usable = new Color(0.16f, 0.16f, 0.18f, 0.95f);
         static readonly Color NotUsable = new Color(0.1f, 0.1f, 0.1f, 0.8f);
         static readonly Color StaminaOk = new Color(0.85f, 0.85f, 0.85f);
+        static readonly Color UiFactory_Muted = new Color(0.75f, 0.75f, 0.75f);
         static readonly Color StaminaOut = new Color(0.8f, 0.2f, 0.2f);
         static readonly Color Active = new Color(0.72f, 0.12f, 0.12f, 0.95f);
         static readonly Color Idle = new Color(0.1f, 0.1f, 0.11f, 0.8f);
@@ -112,6 +116,19 @@ namespace Alfredo
             staminaFill.fillAmount = player.Stamina01;
             staminaFill.color = player.IsExhausted ? StaminaOut : StaminaOk;
             if (staminaLabel != null) staminaLabel.text = player.IsExhausted ? "AGOTADO" : "RESISTENCIA";
+            if (noise != null && noiseFill != null)
+            {
+                float n = noise.Noise01;
+                noiseFill.fillAmount = Mathf.Max(0.02f, n);
+                // verde -> amarillo -> rojo
+                noiseFill.color = n < 0.55f ? Color.Lerp(new Color(0.3f, 0.85f, 0.35f), new Color(0.95f, 0.8f, 0.2f), n / 0.55f)
+                                            : Color.Lerp(new Color(0.95f, 0.8f, 0.2f), new Color(0.92f, 0.15f, 0.12f), (n - 0.55f) / 0.45f);
+                if (noiseLabel != null)
+                {
+                    noiseLabel.text = noise.IsLoud ? "¡RUIDO!" : "RUIDO";
+                    noiseLabel.color = noise.IsLoud && Mathf.Repeat(Time.time, 0.5f) < 0.25f ? new Color(0.95f, 0.25f, 0.2f) : UiFactory_Muted;
+                }
+            }
 
             bool hasLight = flashlight != null && flashlight.HasFlashlight;
             if (batteryGroup != null) batteryGroup.SetActive(hasLight);

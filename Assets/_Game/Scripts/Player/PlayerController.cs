@@ -271,6 +271,7 @@ namespace Alfredo
         public void ResetAfterCatch()
         {
             HidingSpot.ResetAbuse();
+            var nm = GetComponent<NoiseMeter>(); if (nm != null) nm.ResetNoise();
             if (CurrentHidingSpot != null) CurrentHidingSpot.ForceRelease();
             IsHidden = false;
             InArcade = false;

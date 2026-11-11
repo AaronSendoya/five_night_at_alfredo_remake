@@ -11,8 +11,8 @@ namespace Alfredo
     /// </summary>
     public class RufusBrain : AnimatronicBrain
     {
-        [SerializeField] float roamSpeedPx = 3.0f;
-        [SerializeField] float huntSpeedPx = 4.8f;
+        [SerializeField] float roamSpeedPx = 3.3f;
+        [SerializeField] float huntSpeedPx = 5.5f;   // el más rápido (Alfredo rastreando: 5,3)
         [SerializeField] float retreatSpeedPx = 6.5f;
         [SerializeField] float huntMemorySeconds = 15f;
         [SerializeField] float stayHomeSeconds = 6f;
@@ -26,6 +26,12 @@ namespace Alfredo
 
         protected override bool CanCatch => !retreating;
         bool AtHome => Arrived(home, 1.5f);
+
+        // Rufus solo caza a oscuras: con luz el ruido no lo saca de su sitio.
+        protected override void OnHeardNoise(float seconds)
+        {
+            if (!PowerSystem.Instance.HasLight && !retreating) huntTimer = Mathf.Max(huntTimer, seconds);
+        }
 
         protected override void OnResetToHome()
         {

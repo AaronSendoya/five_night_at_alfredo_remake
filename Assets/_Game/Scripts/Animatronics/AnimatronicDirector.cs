@@ -23,6 +23,7 @@ namespace Alfredo
         public void Setup(NightConfig night, PlayerController player)
         {
             maxChases = Mathf.Max(1, night.maxChases);
+            nightNumber = night.night;
             if (this.player != player)
             {
                 if (this.player != null) this.player.Warped -= OnPlayerWarped;
@@ -44,6 +45,31 @@ namespace Alfredo
         }
 
         public void ReleaseChase(AnimatronicBrain who) => chasers.Remove(who);
+
+        int nightNumber = 1;
+
+        /// <summary>
+        /// Ruido al máximo: lo oyen los animatrónicos despiertos de la sala del jugador y de las salas
+        /// conectadas por una puerta (p. ej. desde la oficina: Arcade y Comedor).
+        /// </summary>
+        public int NoiseAlert(PlayerController p, float seconds)
+        {
+            var zones = MapZones.Instance;
+            if (zones == null || p == null) return 0;
+            var here = zones.NearestZone(p.Position);
+            var near = new HashSet<ZoneInfo> { here };
+            foreach (var w in Warp.All)
+                if (w != null && w.FromZone == here && w.ToZone != null) near.Add(w.ToZone);
+            int heard = 0;
+            foreach (var a in animatronics)
+            {
+                if (!a.IsAwake) continue;
+                if (!near.Contains(zones.NearestZone(a.Motor.Position))) continue;
+                a.HearNoise(seconds);
+                heard++;
+            }
+            return heard;
+        }
 
         [Tooltip("Segundos sin poder atacar para los animatrónicos que están junto a la puerta por la que entras")]
         [SerializeField] float doorSafeSeconds = 1.5f;
@@ -67,8 +93,11 @@ namespace Alfredo
             chasers.Clear();
             roamTargets.Clear();
             // Escalonados: si salen todos a la vez del escenario terminan recorriendo juntos las mismas salas.
+            // Desde la noche 2, tras atraparte vuelven a salir antes (la mitad de espera y menos escalonado).
+            bool late = nightNumber >= 2;
+            if (late) grace *= 0.5f;
             for (int i = 0; i < animatronics.Count; i++)
-                animatronics[i].ResetToHome(grace + i * 3f + Random.Range(0f, 2.5f));
+                animatronics[i].ResetToHome(grace + i * (late ? 1.5f : 3f) + Random.Range(0f, late ? 1.2f : 2.5f));
         }
 
         void Update()

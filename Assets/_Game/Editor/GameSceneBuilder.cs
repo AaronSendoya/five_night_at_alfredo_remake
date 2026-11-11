@@ -119,7 +119,8 @@ namespace Alfredo.EditorTools
             var panim = playerVisual.AddComponent<SpriteFrameAnimator>();
             playerGo.AddComponent<YSort>();
             var player = playerGo.AddComponent<PlayerController>();
-            playerGo.AddComponent<DoorDangerSense>();   // pasos apagados + borde rojo si hay alguien tras la puerta
+            playerGo.AddComponent<DoorDangerSense>();
+            playerGo.AddComponent<NoiseMeter>();   // ruido al correr (atrae a los animatrónicos cercanos)   // pasos apagados + borde rojo si hay alguien tras la puerta
             BuilderUtil.SetRef(player, "anim", panim);
             // Sin linterna hasta recogerla; luego, los cuadros con la linterna en la mano.
             BuilderUtil.SetDirectional(player, "sprites", BuilderUtil.Directional("sp_player", "_sinlinterna"));
@@ -582,6 +583,16 @@ namespace Alfredo.EditorTools
             BuilderUtil.SetRef(voice, "brain", brain);
             BuilderUtil.SetRef(voice, "clip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/" + moveSound));
             BuilderUtil.SetRef(voice, "huntClip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/" + moveSound.Replace("mov_", "caza_")));
+            var stepClips = new List<Object>();
+            for (int i = 1; i <= 4; i++)
+            {
+                var c = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/paso_animatronico_{i}.wav");
+                if (c != null) stepClips.Add(c);
+            }
+            BuilderUtil.SetRefs(voice, "steps", stepClips.ToArray());
+            string whoStep = moveSound.Replace("mov_", "").Replace(".wav", "");
+            float pitch = whoStep == "alfredo" ? 0.82f : whoStep == "matilda" ? 1.1f : whoStep == "rufus" ? 1.15f : 0.95f;
+            BuilderUtil.SetValue(voice, "stepPitch", sp => sp.floatValue = pitch);
             string who = moveSound.Replace("mov_", "").Replace(".wav", "");
             BuilderUtil.SetRef(brain, "scream", FindScream(who));
             var lines = new System.Collections.Generic.List<Object>();

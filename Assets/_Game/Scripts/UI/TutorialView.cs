@@ -697,7 +697,7 @@ namespace Alfredo
                 string[] names = { "ALFREDO", "MATILDA", "BONGO", "RUFUS" };
                 string[] tips =
                 {
-                    "Desde la noche 2, si pasas 1 hora en la misma sala, te rastrea. ¡Muévete!",
+                    "Desde la noche 2 te rastrea cada cierto tiempo, estés donde estés. Escóndete o usa una rejilla.",
                     "Va al panel a quemar fusibles. Vigila la luz.",
                     "Patrulla sin descanso y te persigue al verte.",
                     "Caza en los apagones. El más rápido: alúmbralo.",

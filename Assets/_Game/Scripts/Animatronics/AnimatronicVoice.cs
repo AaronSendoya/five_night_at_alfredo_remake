@@ -20,7 +20,19 @@ namespace Alfredo
         [SerializeField] float huntHearRange = 44f;
         [SerializeField] float huntCooldown = 7f;
 
+        [Header("Pasos")]
+        [Tooltip("Variaciones de la pisada; suenan al ritmo real del paso (más seguidas al correr)")]
+        [SerializeField] AudioClip[] steps;
+        [SerializeField] float stepPitch = 1f;
+        [SerializeField] float stepStride = 2.2f;          // unidades recorridas por pisada
+        [SerializeField] float stepHearRange = 28f;        // por el recorrido real
+        [SerializeField, Range(0f, 1f)] float stepVolume = 0.85f;
+
         public AudioClip Clip => clip;
+        AudioSource stepSource;
+        Vector2 lastPos;
+        float stepAcc;
+        int lastStep = -1;
 
         bool wasChasing;
         float huntTimer;
@@ -35,6 +47,9 @@ namespace Alfredo
             source.playOnAwake = false;
             source.spatialBlend = 0f;
             timer = Random.Range(0f, intervalSeconds.y);
+            stepSource = gameObject.AddComponent<AudioSource>();
+            stepSource.playOnAwake = false;
+            stepSource.spatialBlend = 0f;
         }
 
         void Start() => player = FindFirstObjectByType<PlayerController>();
@@ -42,7 +57,7 @@ namespace Alfredo
         void Update()
         {
             var gm = GameManager.Instance;
-            if (gm == null || !gm.IsPlaying || clip == null || player == null || !brain.IsActive) { wasChasing = false; return; }
+            if (gm == null || !gm.IsPlaying || clip == null || player == null || !brain.IsAwake) { wasChasing = false; return; }
             huntTimer -= Time.deltaTime;
             bool chasing = brain.IsChasing;
             if (chasing && !wasChasing && huntClip != null && huntTimer <= 0f)
@@ -57,6 +72,7 @@ namespace Alfredo
                 }
             }
             wasChasing = chasing;
+            Steps();
             timer -= Time.deltaTime;
             if (timer > 0f) return;
             bool moving = brain.Motor.IsMoving;
@@ -67,6 +83,31 @@ namespace Alfredo
             float k = 1f - d / hearRange;
             source.panStereo = Mathf.Clamp((brain.Motor.Position.x - player.Position.x) / 18f, -0.8f, 0.8f);
             source.PlayOneShot(clip, k * k * volume * (moving ? 1f : 0.6f) * SaveSystem.SfxVolume);
+        }
+
+        /// <summary>
+        /// Una pisada cada 'stepStride' unidades recorridas: al correr suenan más seguidas. El volumen crece de forma
+        /// gradual cuanto más cerca está (por el recorrido real, también desde la sala vecina) y se panea a su lado.
+        /// </summary>
+        void Steps()
+        {
+            Vector2 p = brain.Motor.Position;
+            float moved = Vector2.Distance(p, lastPos);
+            lastPos = p;
+            if (steps == null || steps.Length == 0 || moved > 3f || !brain.Motor.IsMoving) return;   // >3: cruzó una puerta
+            stepAcc += moved;
+            if (stepAcc < stepStride) return;
+            stepAcc = 0f;
+            float d = PathDistance(player.Position, p);
+            if (d >= stepHearRange) return;
+            float k = 1f - d / stepHearRange;
+            k = k * k * (3f - 2f * k);                        // suave: casi nada lejos, fuerte muy cerca
+            int i = Random.Range(0, steps.Length);
+            if (steps.Length > 1 && i == lastStep) i = (i + 1) % steps.Length;
+            lastStep = i;
+            stepSource.pitch = stepPitch * Random.Range(0.94f, 1.06f) * (brain.IsChasing ? 1.06f : 1f);
+            stepSource.panStereo = Mathf.Clamp((p.x - player.Position.x) / 18f, -0.85f, 0.85f);
+            stepSource.PlayOneShot(steps[i], Mathf.Lerp(0.05f, 1f, k) * stepVolume * (brain.IsChasing ? 1.15f : 1f) * SaveSystem.SfxVolume);
         }
 
         /// <summary>Distancia a pie: misma sala = línea recta; sala vecina = hasta la puerta y desde su salida.</summary>

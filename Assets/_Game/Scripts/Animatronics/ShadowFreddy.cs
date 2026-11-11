@@ -20,7 +20,7 @@ namespace Alfredo
         [SerializeField] string[] lines;
         [SerializeField] AudioClip screamSound;
         [SerializeField] float firstDelay = 10f;
-        [SerializeField] Vector2 intervalSeconds = new Vector2(24f, 40f);
+        [SerializeField] Vector2 intervalSeconds = new Vector2(14f, 30f);   // 10 s menos que antes: molesta más seguido
 
         float timer;
         int lastLine = -1;
