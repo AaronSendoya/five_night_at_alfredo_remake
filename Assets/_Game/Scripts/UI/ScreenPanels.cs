@@ -76,7 +76,7 @@ namespace Alfredo
             {
                 gameOverPanel.SetActive(true);
                 gameOverDetail.text = $"{gm.LastKiller} te atrapó en la noche {gm.Night.night} a las {gm.Clock.DisplayTime}.";
-                if (gameOverTip != null) gameOverTip.text = "CONSEJO: " + DeathTips.For(gm.LastKiller);
+                if (gameOverTip != null) gameOverTip.text = "CONSEJO: " + gm.LastDeathTip;
             }
         }
 

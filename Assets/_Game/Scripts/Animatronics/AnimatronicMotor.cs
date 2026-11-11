@@ -33,6 +33,42 @@ namespace Alfredo
 
         public event Action<Warp> Warped;
 
+        // Pulido visual: balanceo al caminar y postura de ataque al estar por atrapar al jugador.
+        Transform visual;
+        Vector3 visualBasePos;
+        Vector3 visualBaseScale;
+        float bobPhase;
+        float attack01;
+        bool attacking;
+        Vector2 attackDir;
+
+        void Awake()
+        {
+            if (anim != null)
+            {
+                visual = anim.transform;
+                visualBasePos = visual.localPosition;
+                visualBaseScale = visual.localScale;
+            }
+        }
+
+        /// <summary>Lo llama el cerebro: muy cerca del jugador se estira hacia él (postura de ataque).</summary>
+        public void SetAttack(bool on, Vector2 towards)
+        {
+            attacking = on;
+            if (towards.sqrMagnitude > 0.0001f) attackDir = towards.normalized;
+        }
+
+        void LateUpdate()
+        {
+            if (visual == null) return;
+            attack01 = Mathf.MoveTowards(attack01, attacking ? 1f : 0f, Time.deltaTime * 6f);
+            if (motion == null) motion = visual.GetComponent<SpriteMotion>();
+            if (motion != null) motion.SetAttack(attack01, attackDir);
+        }
+
+        SpriteMotion motion;
+
         public bool SetDestination(Vector2 target)
         {
             pathIndex = 0;

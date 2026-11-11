@@ -47,6 +47,28 @@ namespace Alfredo
     /// <summary>Ruta entre zonas: qué paso tomar para llegar de una zona a otra (búsqueda en anchura).</summary>
     public static class ZoneRouter
     {
+        /// <summary>Cuántas puertas hay que cruzar de una zona a otra (int.MaxValue si no se puede).</summary>
+        public static int Hops(ZoneInfo from, ZoneInfo to)
+        {
+            if (from == null || to == null) return int.MaxValue;
+            if (from == to) return 0;
+            var dist = new Dictionary<ZoneInfo, int> { [from] = 0 };
+            var queue = new Queue<ZoneInfo>();
+            queue.Enqueue(from);
+            while (queue.Count > 0)
+            {
+                var zone = queue.Dequeue();
+                foreach (var w in Warp.All)
+                {
+                    if (w.FromZone != zone || w.ToZone == null || dist.ContainsKey(w.ToZone)) continue;
+                    dist[w.ToZone] = dist[zone] + 1;
+                    if (w.ToZone == to) return dist[w.ToZone];
+                    queue.Enqueue(w.ToZone);
+                }
+            }
+            return int.MaxValue;
+        }
+
         public static Warp NextWarp(ZoneInfo from, ZoneInfo to)
         {
             if (from == null || to == null || from == to) return null;

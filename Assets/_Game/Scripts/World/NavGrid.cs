@@ -54,6 +54,7 @@ namespace Alfredo
                     bool inZone = zones != null && zones.ZoneAt(c) != null;
                     walkable[y * widthCells + x] = inZone && Physics2D.OverlapBox(c, probe, 0f, blockingLayers) == null;
                 }
+            RemoveUnreachablePockets();
             for (int y = 0; y < heightCells; y++)
                 for (int x = 0; x < widthCells; x++)
                 {
@@ -63,6 +64,49 @@ namespace Alfredo
                         for (int dx = -1; dx <= 1; dx++)
                             if (!IsWalkableCell(x + dx, y + dy)) { extraCost[i] = wallPenalty; dy = 2; break; }
                 }
+        }
+
+        /// <summary>
+        /// Quita las celdas libres que no se pueden alcanzar (huecos detrás de paredes o muebles dentro del
+        /// rectángulo de una zona). Se recorre la cuadrícula desde cada llegada de puerta y desde el inicio
+        /// del jugador: lo que no se toca es un hueco, y ni los fusibles ni los animatrónicos deben ir ahí.
+        /// </summary>
+        void RemoveUnreachablePockets()
+        {
+            int n = widthCells * heightCells;
+            var reach = new bool[n];
+            var queue = new Queue<int>(1024);
+            void Seed(Vector2 p)
+            {
+                if (!NearestWalkable(p, 6, out int sx, out int sy)) return;
+                int i = sy * widthCells + sx;
+                if (reach[i]) return;
+                reach[i] = true;
+                queue.Enqueue(i);
+            }
+            foreach (var w in Warp.All) Seed(w.destination);
+            var player = FindAnyObjectByType<PlayerController>();
+            if (player != null) Seed(player.transform.position);
+            if (queue.Count == 0) return;
+            while (queue.Count > 0)
+            {
+                int cur = queue.Dequeue();
+                int cx = cur % widthCells, cy = cur / widthCells;
+                TryVisit(cx + 1, cy); TryVisit(cx - 1, cy); TryVisit(cx, cy + 1); TryVisit(cx, cy - 1);
+            }
+            int removed = 0;
+            for (int i = 0; i < n; i++)
+                if (walkable[i] && !reach[i]) { walkable[i] = false; removed++; }
+            if (removed > 0) Debug.Log($"[Alfredo] NavGrid: {removed} celdas inalcanzables descartadas.");
+
+            void TryVisit(int x, int y)
+            {
+                if (!IsWalkableCell(x, y)) return;
+                int i = y * widthCells + x;
+                if (reach[i]) return;
+                reach[i] = true;
+                queue.Enqueue(i);
+            }
         }
 
         // La celda (0,0) es la esquina superior izquierda del mapa original; y crece hacia abajo.

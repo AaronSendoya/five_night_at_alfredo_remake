@@ -35,6 +35,8 @@ namespace Alfredo
                 player.Teleport(GameUnits.FromGm(Spots[spot].x, Spots[spot].y), Facing.Up);
                 HudMessages.Show(SpotNames[spot]);
             }
+            if (Input.GetKeyDown(KeyCode.F7)) showInfo = !showInfo;
+            if (Input.GetKeyDown(KeyCode.F8)) { AnimatronicBrain.DebugFreeze = !AnimatronicBrain.DebugFreeze; HudMessages.Show(AnimatronicBrain.DebugFreeze ? "Animatrónicos congelados" : "Animatrónicos libres"); }
             if (Input.GetKeyDown(KeyCode.F9))
             {
                 System.IO.Directory.CreateDirectory("Capturas");
@@ -42,6 +44,23 @@ namespace Alfredo
                 ScreenCapture.CaptureScreenshot(file);
                 Debug.Log("[Alfredo] Captura: " + file);
             }
+        }
+
+        bool showInfo;
+        void OnGUI()
+        {
+            if (!showInfo || player == null) return;
+            var p = player.Position; var f = player.FootRect;
+            float gx = p.x * 32f, gy = -p.y * 32f;
+            var w = Warp.Overlapping(f);
+            Warp near = null; float best = 1e9f;
+            foreach (var x in Warp.All) { float d = Vector2.Distance(x.area.center, p); if (d < best) { best = d; near = x; } }
+            string nearTxt = near == null ? "-" : $"x {near.area.xMin * 32f:0}..{near.area.xMax * 32f:0}  y {-near.area.yMax * 32f:0}..{-near.area.yMin * 32f:0}  activo={near.isActiveAndEnabled}";
+            GUI.Box(new Rect(10, 120, 620, 110), "");
+            GUI.Label(new Rect(20, 125, 600, 100),
+                $"Jugador GM ({gx:0}, {gy:0})  pies y {-f.yMax * 32f:0}..{-f.yMin * 32f:0}  x {f.xMin * 32f:0}..{f.xMax * 32f:0}\n" +
+                $"warping={player.IsWarping} cooldown={player.WarpCooldown:0.00} oculto={player.IsHidden} puedeMover={player.CanMove}\n" +
+                $"Paso solapado: {(w != null ? w.name + " -> " + w.ToZone?.name : "ninguno")}\nPaso más cercano: {nearTxt}");
         }
 #endif
     }

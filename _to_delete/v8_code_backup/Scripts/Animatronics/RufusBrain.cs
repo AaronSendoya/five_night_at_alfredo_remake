@@ -1,0 +1,115 @@
+using UnityEngine;
+
+namespace Alfredo
+{
+    /// <summary>
+    /// Rufus (Foxy): el cazador de la oscuridad. Con luz espera en su sitio del escenario.
+    /// En un apagón sale a cazar: si te ve, te persigue (es el más rápido, pero solo un poco: ~13 % más que los demás) y te sigue entre zonas.
+    /// Si la linterna lo alumbra directamente (cualquier parte de su cuerpo), huye a su sitio del
+    /// escenario sin poder atraparte. Mientras lo sigas alumbrando allí se queda quieto; cuando deja
+    /// de estar alumbrado espera un poco y, si sigue sin luz, vuelve a patrullar.
+    /// </summary>
+    public class RufusBrain : AnimatronicBrain
+    {
+        [SerializeField] float roamSpeedPx = 3.0f;
+        [SerializeField] float huntSpeedPx = 4.8f;
+        [SerializeField] float retreatSpeedPx = 6.5f;
+        [SerializeField] float huntMemorySeconds = 15f;
+        [SerializeField] float stayHomeSeconds = 6f;
+        [SerializeField] Flashlight flashlight;
+        [Tooltip("Alto del sprite en unidades (para saber si el haz le toca pies, cuerpo o cabeza)")]
+        [SerializeField] float bodyHeight = 7.2f;
+
+        float huntTimer;
+        float homeTimer;
+        bool retreating;
+
+        protected override bool CanCatch => !retreating;
+        bool AtHome => Arrived(home, 1.5f);
+
+        protected override void OnResetToHome()
+        {
+            huntTimer = 0f; homeTimer = 0f; retreating = false;
+        }
+
+        /// <summary>El haz toca los pies, el cuerpo o la cabeza.</summary>
+        bool Lit()
+        {
+            if (flashlight == null || !flashlight.IsOn) return false;
+            Vector2 p = motor.Position;
+            return flashlight.Illuminates(p + Vector2.up * bodyHeight * 0.12f) || flashlight.Illuminates(p + Vector2.up * bodyHeight * 0.48f) || flashlight.Illuminates(p + Vector2.up * bodyHeight * 0.82f);
+        }
+
+        protected override void Think(float dt)
+        {
+            bool lit = Lit();
+
+            if (retreating)
+            {
+                if (AtHome)
+                {
+                    retreating = false;
+                    homeTimer = stayHomeSeconds;
+                    StandHome();
+                }
+                else NavigateTo(home, Px(retreatSpeedPx), dt, 1f);
+                return;
+            }
+
+            if (PowerSystem.Instance.HasLight)
+            {
+                huntTimer = 0f;
+                GoHome(Px(huntSpeedPx), dt);
+                return;
+            }
+
+            if (lit && !AtHome)
+            {
+                retreating = true;
+                huntTimer = 0f;
+                EndHunt();
+                HudMessages.Show("¡Rufus huye de la luz!");
+                NavigateTo(home, Px(retreatSpeedPx), dt, 1f);
+                return;
+            }
+
+            if (homeTimer > 0f)
+            {
+                if (lit) homeTimer = stayHomeSeconds; // alumbrado en su sitio: no se mueve
+                homeTimer -= dt;
+                StandHome();
+                return;
+            }
+
+            float fast = Px(huntSpeedPx);
+            if (senses.CanSeePlayer) huntTimer = huntMemorySeconds;
+            if (huntTimer > 0f)
+            {
+                huntTimer -= dt;
+                if (!player.IsUndetectable && (IsChasing || director.RequestChase(this)))
+                {
+                    MarkChasing();
+                    NavigateTo(player.Position, fast, dt);
+                    return;
+                }
+                if (HuntPlayer(fast, dt)) return;
+            }
+            else EndHunt();
+            Patrol(dt, Px(roamSpeedPx));
+        }
+
+        void StandHome()
+        {
+            EndHunt();
+            motor.Stop();
+            motor.Face(Facing.Down);
+        }
+
+        void GoHome(float speed, float dt)
+        {
+            EndHunt();
+            if (Arrived(home, 0.4f)) { StandHome(); return; }
+            NavigateTo(home, speed, dt, 1f);
+        }
+    }
+}

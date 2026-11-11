@@ -16,6 +16,11 @@ namespace Alfredo
         [SerializeField] protected AnimatronicSenses senses;
         [SerializeField] protected Transform visual;
         [SerializeField] Sprite jumpscareSprite;
+        [Tooltip("Grito propio al atraparte")]
+        [SerializeField] AudioClip scream;
+        [Tooltip("Frases (en inglés) que dice tras atraparte: se elige una al azar, sin repetir la anterior")]
+        [SerializeField] AudioClip[] deathLines;
+        int lastLine = -1;
         [SerializeField] protected float catchRadius = 1.8f;
 
         protected PlayerController player;
@@ -30,6 +35,11 @@ namespace Alfredo
         float patience;
         bool hadPath;
         ZoneInfo previousZone;
+        float zoneTimer;
+        ZoneInfo roamTarget;
+        Vector2 roamGoal;
+        float roamStuck;
+        int failedPicks;
 
         // Navegación
         float repathTimer;
@@ -52,14 +62,41 @@ namespace Alfredo
         public AnimatronicId Id => id;
         public string DisplayName => displayName;
         public Sprite JumpscareSprite => jumpscareSprite;
+        public AudioClip Scream => scream;
+        public AudioClip NextDeathLine()
+        {
+            if (deathLines == null || deathLines.Length == 0) return null;
+            int i = Random.Range(0, deathLines.Length);
+            if (deathLines.Length > 1 && i == lastLine) i = (i + 1) % deathLines.Length;
+            lastLine = i;
+            return deathLines[i];
+        }
         public int AiLevel { get; private set; }
         public bool IsActive => AiLevel > 0 && bootRemaining <= 0f;
+        /// <summary>Solo pruebas (F8): congela a todos los animatrónicos.</summary>
+        public static bool DebugFreeze;
         public bool IsChasing { get; protected set; }
+        /// <summary>Activo esta noche o actuando igualmente (p. ej. Alfredo en modo Rastreo).</summary>
+        public bool IsAwake => IsActive || ForceAwake;
         public AnimatronicMotor Motor => motor;
 
-        protected float PatrolSpeed => GameUnits.Speed(2f + AiLevel * 0.15f);
-        protected float ChaseSpeed => GameUnits.Speed(2f + AiLevel * 0.15f + 1.5f);
+        /// <summary>
+        /// Multiplicador de velocidad por noche: la noche 1 es la base y cada noche siguiente
+        /// es un 10 % más rápida (noche 4 = x1,30). Lo usan todos los animatrónicos.
+        /// </summary>
+        protected float NightSpeed { get; private set; } = 1f;
+        /// <summary>Ajuste global: +15 % al patrullar y +32 % al perseguir respecto al original.
+        /// Noche 1: persiguen a ~5,6 px/f (el jugador camina a 6 y corre a 10,8); noche 4 (x1,30): ~7,3, hay que correr.</summary>
+        const float MoveBoost = 1.15f, ChaseBoost = 1.32f;
+        protected float PatrolSpeed => GameUnits.Speed(2.75f) * NightSpeed * MoveBoost;
+        protected float ChaseSpeed => GameUnits.Speed(4.25f) * NightSpeed * ChaseBoost;
+        /// <summary>Convierte píxeles por fotograma del original a unidades/s, ya con el ajuste de la noche (al moverse).</summary>
+        protected float Px(float pixelsPerFrame) => GameUnits.Speed(pixelsPerFrame) * NightSpeed * MoveBoost;
+        /// <summary>Igual que Px pero para persecuciones/embestidas.</summary>
+        protected float PxChase(float pixelsPerFrame) => GameUnits.Speed(pixelsPerFrame) * NightSpeed * ChaseBoost;
         protected virtual bool CanCatch => true;
+        /// <summary>Permite actuar aunque esté dormido esta noche (IA 0) o aún no haya despertado (Rastreo de Alfredo).</summary>
+        protected virtual bool ForceAwake => false;
         protected float PatienceSeconds => Mathf.Max(5f, 14f - AiLevel * 0.4f);
 
         protected virtual void Awake()
@@ -75,7 +112,9 @@ namespace Alfredo
             director = d;
             AiLevel = night.AiLevel(id);
             bootRemaining = night.BootSeconds(id);
+            NightSpeed = 1f + 0.10f * Mathf.Max(0, night.night - 1);
             patience = PatienceSeconds;
+            zoneTimer = 0f; roamTarget = null;
             OnConfigured(night);
         }
 
@@ -90,6 +129,7 @@ namespace Alfredo
             bootRemaining = Mathf.Max(bootRemaining, grace);
             EndHunt();
             idleTimer = 0f; hadPath = false; patience = PatienceSeconds;
+            zoneTimer = 0f; roamTarget = null; director?.ClearRoam(this);
             OnResetToHome();
         }
 
@@ -101,23 +141,59 @@ namespace Alfredo
         void Update()
         {
             var gm = GameManager.Instance;
-            if (gm == null || !gm.IsPlaying) { motor.Freeze(); return; }
+            if (gm == null || !gm.IsPlaying || DebugFreeze) { motor.Freeze(); return; }
             float dt = Time.deltaTime;
 
-            if (AiLevel <= 0 || bootRemaining > 0f)
+            if ((AiLevel <= 0 || bootRemaining > 0f) && !ForceAwake)
             {
                 if (bootRemaining > 0f) bootRemaining -= dt;
                 Perform(dt);
                 if (IsActive) EndPerform();
                 return;
             }
+            if (!IsActive) EndPerform();
 
             senses.Tick(player, dt);
+            if (IsHeldOff)
+            {
+                // Zona segura al cruzar una puerta: se aparta del jugador y no ataca.
+                motor.Tick(dt);
+                motor.SetAttack(false, Vector2.zero);
+                return;
+            }
             Think(dt);
             motor.Tick(dt);
 
-            if (CanCatch && !player.IsUndetectable && Vector2.Distance(motor.Position, player.Position) <= catchRadius)
+            Vector2 toPlayer = player.Position - motor.Position;
+            motor.SetAttack(CanCatch && IsHunting && !player.IsUndetectable && toPlayer.magnitude <= catchRadius * 2.2f, toPlayer);
+
+            if (CanCatch && !player.IsUndetectable && !player.IsInvulnerable && Vector2.Distance(motor.Position, player.Position) <= catchRadius)
                 gm.PlayerCaught(this);
+        }
+
+        float holdOffUntil;
+        public bool IsHeldOff => Time.time < holdOffUntil;
+
+        /// <summary>
+        /// El jugador acaba de entrar por una puerta cerca de este animatrónico: durante 'seconds' no ataca
+        /// y retrocede unos pasos alejándose de 'from' (el punto de llegada), para no quedarse pegado a la puerta.
+        /// </summary>
+        public void HoldOff(Vector2 from, float seconds)
+        {
+            holdOffUntil = Time.time + seconds;
+            Vector2 away = motor.Position - from;
+            if (away.sqrMagnitude < 0.01f) away = Random.insideUnitCircle;
+            away.Normalize();
+            motor.Speed = PatrolSpeed;
+            bool moved = false;
+            foreach (float ang in new[] { 0f, 35f, -35f, 70f, -70f, 110f, -110f })
+            {
+                Vector2 dir = (Vector2)(Quaternion.Euler(0f, 0f, ang) * away);
+                for (float dist = 6f; dist >= 3f && !moved; dist -= 1.5f)
+                    moved = motor.SetDestination(motor.Position + dir * dist);
+                if (moved) break;
+            }
+            if (!moved) motor.Stop();
         }
 
         /// <summary>Comportamiento propio de cada animatrónico.</summary>
@@ -126,6 +202,7 @@ namespace Alfredo
         // ---------- Espectáculo (el "baile" del original mientras están inactivos) ----------
         void Perform(float dt)
         {
+            motor.SetAttack(false, Vector2.zero);
             motor.Stop();
             motor.Freeze();
             if (visual == null) return;
@@ -143,20 +220,56 @@ namespace Alfredo
 
         // ---------- Herramientas ----------
 
-        /// <summary>Patrulla: puntos de la zona que no ha visitado hace poco; cuando se aburre, cambia de zona.</summary>
+        /// <summary>
+        /// Patrulla: recorre puntos de su sala que no visitó hace poco, lejos de otros animatrónicos.
+        /// No se queda a vivir en una sala: tras un rato (antes si comparte la sala con otro) elige otra
+        /// sala del mapa con el director, para que no "campeen" todos juntos en el mismo sitio.
+        /// </summary>
         protected void Patrol(float dt, float speed)
         {
             motor.Speed = speed;
-            if (motor.HasPath) { hadPath = true; patience -= dt; return; }
+            var here = MapZones.Instance.NearestZone(motor.Position);
+            bool crowded = director.Occupancy(here, this) > 0 && roamTarget == null;
+            zoneTimer += dt;
+
+            // Viaje a otra sala en curso.
+            if (roamTarget != null)
+            {
+                if (here == roamTarget)
+                {
+                    roamTarget = null;
+                    director.ClearRoam(this);
+                    zoneTimer = 0f;
+                    patience = PatienceSeconds;
+                    hadPath = false;
+                    idleTimer = 0f;
+                }
+                else
+                {
+                    roamStuck += dt;
+                    if (roamStuck > 25f || !NavigateTo(roamGoal, speed, dt, 0.6f))
+                    {
+                        // La sala no es alcanzable ahora (puerta cerrada, por ejemplo): elige otra.
+                        roamTarget = null;
+                        director.ClearRoam(this);
+                        if (!StartRoam(here)) TryLeaveZone();
+                    }
+                    return;
+                }
+            }
+
+            if (motor.HasPath) { hadPath = true; patience -= dt * (crowded ? 3f : 1f); return; }
             if (hadPath)
             {
                 hadPath = false;
                 RememberCrumb(motor.Position);
                 idleTimer = Random.Range(GameUnits.Seconds(Mathf.Max(5f, 30f - AiLevel)), GameUnits.Seconds(Mathf.Max(20f, 75f - AiLevel * 2.5f)));
+                if (crowded) idleTimer *= 0.4f;
             }
             if (idleTimer > 0f)
             {
                 idleTimer -= dt;
+                if (crowded) patience -= dt * 2f;
                 // Quieto no es ciego: gira la cabeza de vez en cuando.
                 lookTimer -= dt;
                 if (lookTimer <= 0f)
@@ -167,23 +280,53 @@ namespace Alfredo
                 return;
             }
 
-            if (patience <= 0f && TryLeaveZone()) { patience = PatienceSeconds; return; }
+            if (patience <= 0f || zoneTimer > MaxZoneSeconds)
+            {
+                patience = PatienceSeconds;
+                if (StartRoam(here) || TryLeaveZone()) return;
+            }
 
             Vector2 best = motor.Position;
-            float bestScore = -1f;
+            float bestScore = float.NegativeInfinity;
             for (int i = 0; i < 10; i++)
             {
                 if (!NavGrid.Instance.RandomPointNear(motor.Position, 6f, 20f, out Vector2 p, 4)) continue;
                 float score = 0f;
                 foreach (var c in breadcrumbs) score += Vector2.Distance(p, c);
+                // Lejos de los demás: si dos patrullan la misma sala, cada uno toma un lado.
+                score += Mathf.Min(director.NearestOther(this, p), 20f) * 4f;
                 if (score > bestScore) { bestScore = score; best = p; }
             }
-            if (bestScore < 0f || !motor.SetDestination(best)) idleTimer = 0.3f;
+            if (float.IsNegativeInfinity(bestScore) || !motor.SetDestination(best))
+            {
+                idleTimer = 0.3f;
+                if (++failedPicks >= 4) { failedPicks = 0; if (!StartRoam(here)) TryLeaveZone(); }
+            }
+            else failedPicks = 0;
+        }
+
+        /// <summary>Segundos máximos patrullando una misma sala antes de cambiar (menos con más IA).</summary>
+        float MaxZoneSeconds => Mathf.Lerp(30f, 16f, Mathf.Clamp01(AiLevel / 20f));
+
+        bool StartRoam(ZoneInfo here)
+        {
+            var target = director.PickRoamZone(this, here);
+            if (target == null) return false;
+            if (!NavGrid.Instance.RandomPointInZone(target, out roamGoal)) { director.ClearRoam(this); return false; }
+            roamTarget = target;
+            roamStuck = 0f;
+            if (!NavigateTo(roamGoal, motor.Speed, 0f, 0.6f))
+            {
+                roamTarget = null;
+                director.ClearRoam(this);
+                return false;
+            }
+            return true;
         }
 
         static readonly System.Collections.Generic.List<Warp> exitCandidates = new System.Collections.Generic.List<Warp>();
 
-        /// <summary>Elige un paso de su zona, evitando volver a la zona de la que viene si hay otra opción.</summary>
+        /// <summary>Plan B: un paso cualquiera de su zona, evitando volver a la zona de la que viene.</summary>
         bool TryLeaveZone()
         {
             var here = MapZones.Instance.NearestZone(motor.Position);
@@ -207,6 +350,7 @@ namespace Alfredo
         void OnWarped(Warp w)
         {
             previousZone = w.FromZone;
+            zoneTimer = 0f;
             hadPath = false;
             idleTimer = 0f;
             repathTimer = 0f;

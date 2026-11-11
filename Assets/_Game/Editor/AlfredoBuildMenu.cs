@@ -88,13 +88,19 @@ namespace Alfredo.EditorTools
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
-            // ARM64 para teléfonos reales; x86-64 para poder probar en el emulador de Android Studio.
-            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.X86_64;
+            // Solo ARM64: es lo que usan los teléfonos reales. x86-64 (emulador) duplicaba las librerías nativas.
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            // Peso del APK: código C# y del motor que no se usa fuera, IL2CPP generando código más compacto
+            // y sin símbolos de depuración. No se quita contenido del juego.
+            PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.Android, ManagedStrippingLevel.Medium);
+            PlayerSettings.stripEngineCode = true;
+            PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.Android, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+            EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Disabled;
             PlayerSettings.runInBackground = false;
             EditorUserBuildSettings.buildAppBundle = false;
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
-            Debug.Log("[Alfredo] Android configurado: horizontal, Android 8 o superior, IL2CPP, ARM64 + x86-64.");
+            Debug.Log("[Alfredo] Android configurado: horizontal, Android 8 o superior, IL2CPP, ARM64, optimizado para peso.");
         }
 
         /// <summary>
@@ -130,7 +136,7 @@ namespace Alfredo.EditorTools
                 scenes = new[] { MenuSceneBuilder.ScenePath, GameSceneBuilder.ScenePath },
                 locationPathName = ApkPath,
                 target = BuildTarget.Android,
-                options = run ? BuildOptions.AutoRunPlayer : BuildOptions.None
+                options = BuildOptions.CompressWithLz4HC | (run ? BuildOptions.AutoRunPlayer : BuildOptions.None)
             };
             var report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result == BuildResult.Succeeded)

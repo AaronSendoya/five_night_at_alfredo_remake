@@ -119,8 +119,8 @@ namespace Alfredo.EditorTools
             var credits = UiFactory.FullPanel("Creditos", canvas, new Color(0f, 0f, 0f, 0.88f));
             UiFactory.AddText("Titulo", credits.transform, "CRÉDITOS", 80, C, new Vector2(0f, 330f), new Vector2(1200f, 110f), TextAnchor.MiddleCenter, null, FontStyle.Bold);
             UiFactory.AddText("Texto", credits.transform,
-                "Cinco Noches con Alfredo\nJuego fan-made (hecho por un fan) para Android\n\nDesarrollo: René Aarón Sendoya Baqueros\nUniversidad Privada del Valle (UNIVALLE)\n\nTodo el juego es una inspiración de Five Nights at Freddy's, creado por Scott Cawthon.\nProyecto académico sin fines de lucro, no oficial ni afiliado a Scott Cawthon.\n\nMúsica del menú: «Ambient Horror Track 01» de Cleyton Kauffman (OpenGameArt.org, CC0).",
-                36, C, new Vector2(0f, -10f), new Vector2(1700f, 580f));
+                "Cinco Noches con Alfredo\nJuego fan-made (hecho por un fan) para Android\n\nDesarrollo: René Aarón Sendoya Baqueros\nUniversidad Privada del Valle (UNIVALLE)\n\nTodo el juego es una inspiración de Five Nights at Freddy's, creado por Scott Cawthon.\nProyecto académico sin fines de lucro, no oficial ni afiliado a Scott Cawthon.\n\nMúsica del menú: «Ambient Horror Track 01» de Cleyton Kauffman (OpenGameArt.org, CC0).\nVoces de los animatrónicos: síntesis con Piper, voz «Ryan» (CC BY-NC-SA 4.0), procesada.\nGritos de los jumpscares: «Ignited» (The Joy of Creation, de Nikson), versiones subidas a Voicemod.",
+                32, C, new Vector2(0f, -10f), new Vector2(1700f, 600f));
             Styled(UiFactory.AddButton("Volver", credits.transform, "Volver", C, new Vector2(0f, -360f), new Vector2(400f, 90f), menu.ShowMain));
 
             // Historia (lore basado en el juego original: la pizzería, los endoesqueletos y el cuarto secreto)

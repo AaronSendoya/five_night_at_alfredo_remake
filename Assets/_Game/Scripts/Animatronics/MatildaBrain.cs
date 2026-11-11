@@ -55,7 +55,7 @@ namespace Alfredo
                         motor.Face(Facing.Up);
                         break;
                     }
-                    if (!NavigateTo(panel.WorkSpot, GameUnits.Speed(missionSpeedPx), dt, 1f))
+                    if (!NavigateTo(panel.WorkSpot, Px(missionSpeedPx), dt, 1f))
                     {
                         mode = Mode.Normal;
                         sabotageTimer = 2f;

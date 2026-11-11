@@ -16,6 +16,11 @@ namespace Alfredo
         [SerializeField] SpriteFrameAnimator anim;
         [SerializeField] DirectionalSprites sprites;
         [SerializeField] DirectionalSprites runSprites;
+        [Tooltip("Los mismos cuadros, pero con la linterna en la mano (se usan cuando ya la recogió)")]
+        [SerializeField] DirectionalSprites lightSprites;
+        [SerializeField] DirectionalSprites lightRunSprites;
+        [SerializeField] Flashlight flashlight;
+        [SerializeField] SpriteMotion motion;
         [SerializeField] Sprite[] hideFrames;
         [SerializeField] float hideAnimSeconds = 0.3f;
 
@@ -24,9 +29,9 @@ namespace Alfredo
         [SerializeField] float runMultiplier = 1.8f;
 
         [Header("Resistencia")]
-        [SerializeField] float staminaMax = 220f;
-        [SerializeField] float drainPerFrame = 1.3f;
-        [SerializeField] float recoverPerFrame = 0.7f;
+        [SerializeField] float staminaMax = 280f;        // ~5,5 s corriendo (antes ~2,8 s)
+        [SerializeField] float drainPerFrame = 0.85f;
+        [SerializeField] float recoverPerFrame = 0.8f;
         [SerializeField] float exhaustedSeconds = 2f;
 
         [Header("Cuerpo")]
@@ -34,8 +39,10 @@ namespace Alfredo
         [SerializeField] float bodyCenterHeight = 2.8f;
 
         [Header("Paso entre zonas")]
-        [SerializeField] float warpFadeSeconds = 0.25f;
-        [SerializeField] float warpFreezeSeconds = 0.5f;
+        [SerializeField] float warpFadeSeconds = 0.07f;
+        [SerializeField] float warpFreezeSeconds = 0f;
+        [Tooltip("Segundos sin poder ser atrapado justo después de cruzar una puerta")]
+        [SerializeField] float warpInvulnerableSeconds = 0.5f;
 
         Rigidbody2D rb;
         BoxCollider2D body;
@@ -81,6 +88,7 @@ namespace Alfredo
 
         void Awake()
         {
+            HidingSpot.ResetAbuse();   // cada noche empieza sin bloqueo
             rb = GetComponent<Rigidbody2D>();
             body = GetComponent<BoxCollider2D>();
             Inventory = GetComponent<Inventory>();
@@ -90,10 +98,30 @@ namespace Alfredo
         public void Lock(object owner) => locks.Add(owner);
         public void Unlock(object owner) => locks.Remove(owner);
 
+        float invulnerableUntil = -1f;
+        ZoneInfo timerZone;
+
+        /// <summary>Recién cruzó una puerta: ningún animatrónico puede atraparlo (0,5 s).</summary>
+        public bool IsInvulnerable => Time.time < invulnerableUntil;
+        public bool IsWarping => warping;
+        public float WarpCooldown => warpCooldown;
+
+        /// <summary>Segundos seguidos en la misma sala (sin contar el tiempo escondido). Lo usa el Rastreo de Alfredo.</summary>
+        public float ZoneSeconds { get; private set; }
+        public void ResetZoneTimer() => ZoneSeconds = 0f;
+
         void Update()
         {
             float dt = Time.deltaTime;
             if (warpCooldown > 0f) warpCooldown -= dt;
+
+            var gmNow = GameManager.Instance;
+            if (gmNow != null && gmNow.IsPlaying)
+            {
+                var zone = CurrentZone;
+                if (zone != timerZone) { timerZone = zone; ZoneSeconds = 0f; }
+                else if (!IsUndetectable) ZoneSeconds += dt;
+            }
 
             moveInput = CanMove ? TouchInput.Move : Vector2.zero;
             IsMoving = moveInput.sqrMagnitude > 0.01f;
@@ -108,6 +136,7 @@ namespace Alfredo
                     exhaustedTimer = exhaustedSeconds;
                     wantsRun = false;
                     AudioManager.PlaySfx(Sfx.Gasp);
+                    AudioManager.PlaySfx(Sfx.TiredBreath);   // respiración cansada mientras se recupera
                 }
             }
             else if (exhaustedTimer <= 0f)
@@ -154,12 +183,15 @@ namespace Alfredo
 
         Sprite[] FramesFor(Facing f, bool running)
         {
-            if (running && runSprites != null)
+            bool lit = flashlight != null && flashlight.HasFlashlight;
+            var walk = lit && lightSprites != null && lightSprites.Get(f) != null && lightSprites.Get(f).Length > 0 ? lightSprites : sprites;
+            var run = lit && lightRunSprites != null && lightRunSprites.Get(f) != null && lightRunSprites.Get(f).Length > 0 ? lightRunSprites : runSprites;
+            if (running && run != null)
             {
-                var r = runSprites.Get(f);
+                var r = run.Get(f);
                 if (r != null && r.Length > 0) return r;
             }
-            return sprites.Get(f);
+            return walk.Get(f);
         }
 
         void FixedUpdate()
@@ -175,11 +207,12 @@ namespace Alfredo
             rb.linearVelocity = Vector2.zero;
             AudioManager.PlaySfx(Sfx.PassDoor);
             var fader = ScreenFader.Instance;
-            if (fader != null) yield return fader.FadeOut(warpFadeSeconds);
+            if (fader != null && warpFadeSeconds > 0f) yield return fader.FadeOut(warpFadeSeconds);
             Teleport(warp.destination, warp.arrivalFacing);
+            invulnerableUntil = Time.time + warpInvulnerableSeconds;
             Warped?.Invoke(CurrentZone);
-            if (fader != null) yield return fader.FadeIn(warpFadeSeconds);
-            yield return new WaitForSeconds(warpFreezeSeconds);
+            if (fader != null && warpFadeSeconds > 0f) yield return fader.FadeIn(warpFadeSeconds);
+            if (warpFreezeSeconds > 0f) yield return new WaitForSeconds(warpFreezeSeconds);
             warping = false;
             warpCooldown = 0.75f;
         }
@@ -190,7 +223,7 @@ namespace Alfredo
             transform.position = position;
             rb.linearVelocity = Vector2.zero;
             Facing = facing;
-            if (anim != null) { anim.SetFrames(sprites.Get(facing)); anim.Play(false); }
+            if (anim != null) { anim.SetFrames(FramesFor(facing, false)); anim.Play(false); }
             Physics2D.SyncTransforms();
         }
 
@@ -199,6 +232,7 @@ namespace Alfredo
             IsHidden = true;
             CurrentHidingSpot = spot;
             rb.linearVelocity = Vector2.zero;
+            if (motion != null && spot != null) motion.Vanish(spot.transform.position, spot.IsVent);
             if (anim != null && hideFrames != null && hideFrames.Length > 0)
             {
                 // Animación breve de agacharse antes de desaparecer en el escondite.
@@ -215,8 +249,10 @@ namespace Alfredo
         public void Unhide(Vector2 exitPosition)
         {
             if (!IsHidden) return;
+            bool wasVent = CurrentHidingSpot != null && CurrentHidingSpot.IsVent;
             IsHidden = false;
             CurrentHidingSpot = null;
+            if (motion != null) motion.Appear(wasVent);
             hideAnim = 0f;
             Teleport(exitPosition, Facing);
             SetVisible(true);
@@ -228,12 +264,13 @@ namespace Alfredo
             InArcade = on;
             rb.linearVelocity = Vector2.zero;
             if (on) Facing = Facing.Up;
-            if (anim != null) { anim.SetFrames(sprites.Get(Facing)); anim.Play(false); }
+            if (anim != null) { anim.SetFrames(FramesFor(Facing, false)); anim.Play(false); }
         }
 
         /// <summary>Tras una captura: sale de cualquier escondite y recupera la resistencia.</summary>
         public void ResetAfterCatch()
         {
+            HidingSpot.ResetAbuse();
             if (CurrentHidingSpot != null) CurrentHidingSpot.ForceRelease();
             IsHidden = false;
             InArcade = false;
@@ -245,6 +282,8 @@ namespace Alfredo
             locks.Clear();
             StopAllCoroutines();
             warping = false;
+            ZoneSeconds = 0f;
+            invulnerableUntil = -1f;
         }
 
         void SetVisible(bool visible)

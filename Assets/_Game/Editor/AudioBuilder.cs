@@ -8,7 +8,7 @@ namespace Alfredo.EditorTools
     {
         static readonly (Sfx id, string file, float volume)[] Clips =
         {
-            (Sfx.Jumpscare, "snd_jumpscare_1.mp3", 1f),
+            (Sfx.Jumpscare, "susto.wav", 1f), // chillido distorsionado al estilo FNaF 4 (el original queda en snd_jumpscare_1.mp3)
             (Sfx.SixAM, "snd_6am.mp3", 1f),
             (Sfx.PowerOff, "snd_poweroff.wav", 0.9f),
             (Sfx.PowerOutHum, "snd_power_out.mp3", 0.7f),
@@ -48,6 +48,11 @@ namespace Alfredo.EditorTools
             (Sfx.Amb1, "amb_crujido.wav", 0.8f),
             (Sfx.Amb2, "amb_golpeteo.wav", 0.8f),
             (Sfx.Amb3, "amb_golpe_lejano.wav", 0.8f),
+            // Foley con modelado físico (sustituyen a los tonos sintéticos de ProceduralAudio)
+            (Sfx.Pickup, "linterna_recoger.wav", 0.75f),
+            (Sfx.FuseInstalled, "fusible_instalar.wav", 0.85f),
+            (Sfx.Switch, "interruptor.wav", 0.8f),
+            (Sfx.TiredBreath, "respiracion_cansada.wav", 0.75f),
         };
 
         /// <summary>Música del menú (solo el menú). Se acepta .ogg, .mp3 o .wav con el nombre musica_menu.</summary>
@@ -100,7 +105,9 @@ namespace Alfredo.EditorTools
                 bool longClip = clip != null && clip.length > 8f;
                 s.loadType = longClip ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
                 s.compressionFormat = AudioCompressionFormat.Vorbis;
-                s.quality = 0.7f;
+                s.quality = 0.6f;
+                // Ajusta la frecuencia de muestreo al contenido real del sonido: pesa menos sin perder calidad audible.
+                s.sampleRateSetting = AudioSampleRateSetting.OptimizeSampleRate;
                 imp.defaultSampleSettings = s;
                 bool music = System.IO.Path.GetFileName(path).StartsWith("musica_");
                 if (music) { s.loadType = AudioClipLoadType.Streaming; s.quality = 0.6f; imp.defaultSampleSettings = s; }

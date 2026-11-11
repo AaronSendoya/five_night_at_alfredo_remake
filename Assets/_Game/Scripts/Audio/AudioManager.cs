@@ -11,7 +11,8 @@ namespace Alfredo
         // Efectos añadidos después (van al final para no mover los valores del enum ya guardados en las escenas)
         Step1, Step2, Step3, Step4, FlashlightOn, FlashlightOff, CrankLoop, BatteryLow, BatteryEmpty,
         HideIn, HideOut, VentIn, VentOut, DoorBump, PassDoor, Heartbeat, Gasp, AirTick, Tip, FuseAppear,
-        FuseGrab, PowerOn, Denied, NightStart, Amb1, Amb2, Amb3
+        FuseGrab, PowerOn, Denied, NightStart, Amb1, Amb2, Amb3,
+        TiredBreath
     }
 
     [Serializable]

@@ -29,6 +29,8 @@ namespace Alfredo
         [SerializeField] int startingLives = 3;
         [SerializeField] float introSeconds = 4.5f;
         [SerializeField] float jumpscareSeconds = 2.2f;
+        [Tooltip("Segundos tras el grito en que el animatrónico dice su frase")]
+        [SerializeField] float lineDelay = 0.9f;
         [SerializeField] float respawnGraceSeconds = 6f;
 
         public GameState State { get; private set; } = GameState.Intro;
@@ -39,6 +41,8 @@ namespace Alfredo
         public bool IsPlaying => State == GameState.Playing && !IsPaused;
         /// <summary>Quién atrapó al jugador la última vez (para el consejo de la pantalla de derrota).</summary>
         public AnimatronicId LastKiller { get; private set; }
+        /// <summary>Consejo para la última muerte (depende de quién y cómo te atrapó).</summary>
+        public string LastDeathTip { get; private set; } = "";
 
         public event Action<GameState> StateChanged;
         public event Action<bool> PauseChanged;
@@ -117,12 +121,25 @@ namespace Alfredo
         IEnumerator CaughtRoutine(AnimatronicBrain who)
         {
             LastKiller = who.Id;
+            LastDeathTip = DeathTips.For(who);
             SetState(GameState.Caught);
             AudioManager.StopAllLoops();
             AudioManager.SetAmbience(false);
-            AudioManager.PlaySfx(Sfx.Jumpscare);
-            screens.ShowJumpscare(who.JumpscareSprite, jumpscareSeconds);
-            yield return new WaitForSeconds(jumpscareSeconds);
+            // Solo habla el que te atrapó: su grito y, encima, una de sus frases.
+            if (who.Scream != null) AudioManager.PlayClip(who.Scream, 1f);
+            else AudioManager.PlaySfx(Sfx.Jumpscare);
+            var line = who.NextDeathLine();
+            // La frase entra cuando termina el grito (como mucho a los 3 s, para gritos largos).
+            float delay = who.Scream != null ? Mathf.Clamp(who.Scream.length, lineDelay, 3f) : lineDelay;
+            float total = line != null ? Mathf.Max(jumpscareSeconds, delay + line.length + 0.2f) : Mathf.Max(jumpscareSeconds, who.Scream != null ? Mathf.Min(who.Scream.length, 3.5f) : 0f);
+            screens.ShowJumpscare(who.JumpscareSprite, total);
+            if (line != null)
+            {
+                yield return new WaitForSeconds(delay);
+                AudioManager.PlayClip(line, 1f);
+                yield return new WaitForSeconds(total - delay);
+            }
+            else yield return new WaitForSeconds(total);
 
             Lives--;
             if (Lives <= 0)
@@ -138,7 +155,7 @@ namespace Alfredo
             director.ResetAll(respawnGraceSeconds);
             zoneCamera.ClearOverride();
             HudMessages.Show(Lives == 1 ? "Te queda 1 vida" : $"Te quedan {Lives} vidas");
-            HudTips.Show(DeathTips.For(who.Id), true);
+            HudTips.Show(LastDeathTip, true);
             if (fader != null) yield return fader.FadeIn(0.5f);
             SetState(GameState.Playing);
             AudioManager.SetAmbience(true);

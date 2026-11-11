@@ -4,16 +4,16 @@ namespace Alfredo
 {
     /// <summary>
     /// Rufus (Foxy): el cazador de la oscuridad. Con luz espera en su sitio del escenario.
-    /// En un apagón sale a cazar: si te ve, te persigue muy rápido y te sigue entre zonas.
+    /// En un apagón sale a cazar: si te ve, te persigue (es el más rápido, pero solo un poco: ~13 % más que los demás) y te sigue entre zonas.
     /// Si la linterna lo alumbra directamente (cualquier parte de su cuerpo), huye a su sitio del
     /// escenario sin poder atraparte. Mientras lo sigas alumbrando allí se queda quieto; cuando deja
     /// de estar alumbrado espera un poco y, si sigue sin luz, vuelve a patrullar.
     /// </summary>
     public class RufusBrain : AnimatronicBrain
     {
-        [SerializeField] float roamSpeedPx = 3.5f;
-        [SerializeField] float huntSpeedPx = 6f;
-        [SerializeField] float retreatSpeedPx = 7f;
+        [SerializeField] float roamSpeedPx = 3.0f;
+        [SerializeField] float huntSpeedPx = 4.8f;
+        [SerializeField] float retreatSpeedPx = 6.5f;
         [SerializeField] float huntMemorySeconds = 15f;
         [SerializeField] float stayHomeSeconds = 6f;
         [SerializeField] Flashlight flashlight;
@@ -52,14 +52,14 @@ namespace Alfredo
                     homeTimer = stayHomeSeconds;
                     StandHome();
                 }
-                else NavigateTo(home, GameUnits.Speed(retreatSpeedPx), dt, 1f);
+                else NavigateTo(home, Px(retreatSpeedPx), dt, 1f);
                 return;
             }
 
             if (PowerSystem.Instance.HasLight)
             {
                 huntTimer = 0f;
-                GoHome(GameUnits.Speed(huntSpeedPx), dt);
+                GoHome(Px(huntSpeedPx), dt);
                 return;
             }
 
@@ -69,7 +69,7 @@ namespace Alfredo
                 huntTimer = 0f;
                 EndHunt();
                 HudMessages.Show("¡Rufus huye de la luz!");
-                NavigateTo(home, GameUnits.Speed(retreatSpeedPx), dt, 1f);
+                NavigateTo(home, Px(retreatSpeedPx), dt, 1f);
                 return;
             }
 
@@ -81,7 +81,7 @@ namespace Alfredo
                 return;
             }
 
-            float fast = GameUnits.Speed(huntSpeedPx);
+            float fast = PxChase(huntSpeedPx);
             if (senses.CanSeePlayer) huntTimer = huntMemorySeconds;
             if (huntTimer > 0f)
             {
@@ -95,7 +95,7 @@ namespace Alfredo
                 if (HuntPlayer(fast, dt)) return;
             }
             else EndHunt();
-            Patrol(dt, GameUnits.Speed(roamSpeedPx));
+            Patrol(dt, Px(roamSpeedPx));
         }
 
         void StandHome()

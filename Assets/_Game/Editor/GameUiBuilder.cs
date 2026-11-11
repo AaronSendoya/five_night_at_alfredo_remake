@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor.Events;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +13,7 @@ namespace Alfredo.EditorTools
         public GameObject[] mapHighlights;
         public Button[] camButtons;   // un botón táctil por sala del minimapa (CAM 01–07)
         public HudView hud;
+        public CanvasGroup hudGroup;
         public ScreamerView screamer;
         public Text cameraName, recText, subtitleText;
         public RawImage staticOverlay;
@@ -50,6 +52,7 @@ namespace Alfredo.EditorTools
 
             // ---------- HUD ----------
             var hudRt = UiFactory.Stretch("HUD", canvas);
+            ui.hudGroup = hudRt.gameObject.AddComponent<CanvasGroup>();
             var hud = hudRt.gameObject.AddComponent<HudView>();
             var clockText = UiFactory.AddText("Reloj", hudRt, "12:00 AM", 64, TL, new Vector2(240f, -60f), new Vector2(420f, 80f), TextAnchor.MiddleLeft, null, FontStyle.Bold);
             var nightText = UiFactory.AddText("Noche", hudRt, "Noche 1", 34, TL, new Vector2(240f, -118f), new Vector2(420f, 44f), TextAnchor.MiddleLeft, UiFactory.MutedText);
@@ -269,25 +272,84 @@ namespace Alfredo.EditorTools
 
         static GameObject BuildTutorial(Transform parent)
         {
+            var white = BuilderUtil.GeneratedSprite("blanco", 4, false);
+            var circle = BuilderUtil.GeneratedSprite("circulo", 128, true);
+            var T = new Vector2(0.5f, 1f);
             var panel = UiFactory.FullPanel("Tutorial", parent, new Color(0.02f, 0.02f, 0.03f, 1f));
-            var frameRt = UiFactory.Rect("Marco", panel.transform, C, C, new Vector2(0f, 235f), new Vector2(908f, 428f));
-            UiFactory.AddImage(frameRt, new Color(0.95f, 0.9f, 0.8f, 0.25f));
-            var picRt = UiFactory.Rect("Imagen", frameRt, C, C, Vector2.zero, new Vector2(900f, 420f));
-            var pic = UiFactory.AddImage(picRt, Color.white);
-            var body = UiFactory.AddText("Texto", panel.transform, "", 36, C, new Vector2(0f, -150f), new Vector2(1720f, 300f));
-            var step = UiFactory.AddText("Paso", panel.transform, "1 / 14", 30, BC, new Vector2(0f, 190f), new Vector2(300f, 44f), TextAnchor.MiddleCenter, UiFactory.MutedText);
             var view = panel.gameObject.AddComponent<TutorialView>();
-            UiFactory.AddButton("Siguiente", panel.transform, "Siguiente", BC, new Vector2(300f, 90f), new Vector2(420f, 110f), view.Next, 40, UiFactory.Accent);
-            UiFactory.AddButton("Saltar", panel.transform, "Saltar tutorial", BC, new Vector2(-300f, 90f), new Vector2(420f, 110f), view.Skip, 36);
+            var title = UiFactory.AddText("Titulo", panel.transform, "", 56, T, new Vector2(0f, -75f), new Vector2(1600f, 80f), TextAnchor.MiddleCenter, new Color(0.95f, 0.75f, 0.35f), FontStyle.Bold);
+
+            // Escenario animado (recortado por la máscara)
+            var frameRt = UiFactory.Rect("Marco", panel.transform, C, C, new Vector2(-330f, 20f), new Vector2(1012f, 572f));
+            UiFactory.AddImage(frameRt, new Color(0.95f, 0.9f, 0.8f, 0.22f));
+            var stage = UiFactory.Rect("Escena", frameRt, C, C, Vector2.zero, new Vector2(1000f, 560f));
+            UiFactory.AddImage(stage, Color.black);
+            stage.gameObject.AddComponent<RectMask2D>();
+
+            // Columna derecha: explicación, botón de práctica y pista
+            var body = UiFactory.AddText("Texto", panel.transform, "", 33, C, new Vector2(560f, 140f), new Vector2(660f, 380f), TextAnchor.UpperLeft);
+            body.supportRichText = true;
+            body.lineSpacing = 1.1f;
+            var ringRt = UiFactory.Rect("Practica", panel.transform, C, C, new Vector2(560f, -170f), new Vector2(200f, 200f));
+            var ringBack = UiFactory.AddImage(ringRt, new Color(1f, 1f, 1f, 0.12f), false, circle);
+            var ringFill = UiFactory.Rect("Progreso", ringRt, C, C, Vector2.zero, new Vector2(200f, 200f));
+            var ring = UiFactory.AddImage(ringFill, new Color(0.95f, 0.75f, 0.35f, 1f), false, circle);
+            ring.type = Image.Type.Filled; ring.fillMethod = Image.FillMethod.Radial360; ring.fillOrigin = (int)Image.Origin360.Top; ring.fillAmount = 0f;
+            var btnRt = UiFactory.Rect("Boton", ringRt, C, C, Vector2.zero, new Vector2(168f, 168f));
+            var btnImg = UiFactory.AddImage(btnRt, new Color(0.13f, 0.13f, 0.15f, 0.95f), true, circle);
+            var iconRt = UiFactory.Rect("Icono", btnRt, C, C, Vector2.zero, new Vector2(100f, 100f));
+            var icon = UiFactory.AddImage(iconRt, Color.white, false, null);
+            icon.preserveAspect = true;
+            var pressComp = btnRt.gameObject.AddComponent<TutorialPress>();
+            var hint = UiFactory.AddText("Pista", panel.transform, "", 28, C, new Vector2(560f, -305f), new Vector2(660f, 70f), TextAnchor.MiddleCenter, new Color(0.95f, 0.85f, 0.6f));
+
+            // Navegación
+            var step = UiFactory.AddText("Paso", panel.transform, "1 / 8", 30, BC, new Vector2(80f, 95f), new Vector2(200f, 44f), TextAnchor.MiddleCenter, UiFactory.MutedText);
+            UiFactory.AddButton("Saltar", panel.transform, "Saltar tutorial", BC, new Vector2(-640f, 90f), new Vector2(360f, 100f), view.Skip, 32);
+            UiFactory.AddButton("Atras", panel.transform, "Atrás", BC, new Vector2(-230f, 90f), new Vector2(260f, 100f), view.Back, 34);
+            var next = UiFactory.AddButton("Siguiente", panel.transform, "Siguiente", BC, new Vector2(470f, 90f), new Vector2(420f, 110f), view.Next, 40, UiFactory.Accent);
+
             BuilderUtil.SetRef(view, "panel", panel.gameObject);
+            BuilderUtil.SetRef(view, "titleText", title);
             BuilderUtil.SetRef(view, "bodyText", body);
             BuilderUtil.SetRef(view, "stepText", step);
-            BuilderUtil.SetRef(view, "picture", pic);
-            // Capturas del juego actual (versión móvil), una por paso: UI/Tutorial/tutorial_01.png ...
-            var pics = new Object[TutorialView.Steps.Length];
-            for (int i = 0; i < pics.Length; i++) pics[i] = BuilderUtil.TutorialSprite($"tutorial_{i + 1:00}");
-            BuilderUtil.SetRefs(view, "pictures", pics);
-            frameRt.gameObject.SetActive(true);
+            BuilderUtil.SetRef(view, "hintText", hint);
+            BuilderUtil.SetRef(view, "nextLabel", UiFactory.Label(next));
+            BuilderUtil.SetRef(view, "stage", stage);
+            BuilderUtil.SetRef(view, "actionButton", ringRt.gameObject);
+            BuilderUtil.SetRef(view, "actionIcon", icon);
+            BuilderUtil.SetRef(view, "actionRing", ring);
+            BuilderUtil.SetRef(view, "press", pressComp);
+
+            BuilderUtil.SetRef(view, "white", white);
+            BuilderUtil.SetRef(view, "bgOffice", BuilderUtil.First("sp_fondo_camaras"));
+            BuilderUtil.SetRef(view, "bgDeposito", BuilderUtil.First("sp_fondo_deposito"));
+            BuilderUtil.SetRef(view, "bgArcade", BuilderUtil.First("sp_fondo_arcade"));
+            BuilderUtil.SetRef(view, "bgComedor", BuilderUtil.First("sp_pizzeria_comedor"));
+            BuilderUtil.SetRef(view, "bgAlmacen", BuilderUtil.First("sp_fondo_almacen"));
+            BuilderUtil.SetRef(view, "bgEscenario", BuilderUtil.First("sp_escenario_principal"));
+            BuilderUtil.SetDirectional(view, "playerSprites", BuilderUtil.Directional("sp_player"));
+            BuilderUtil.SetRefs(view, "alfredo", BuilderUtil.Frames("sp_freddy_caminar_frente"));
+            BuilderUtil.SetRefs(view, "matilda", BuilderUtil.Frames("sp_chica_caminar_frente"));
+            BuilderUtil.SetRefs(view, "bongo", BuilderUtil.Frames("sp_bonnie_caminar_frente_guitarra"));
+            BuilderUtil.SetRefs(view, "rufus", BuilderUtil.Frames("sp_foxy_caminar_frente"));
+            BuilderUtil.SetRefs(view, "rufusUp", BuilderUtil.Frames("sp_foxy_caminar_atras"));
+            BuilderUtil.SetRef(view, "shutter", BuilderUtil.First("sp_puerta_oficina"));
+            var plate = BuilderUtil.Frames("sp_interruptor_puerta");
+            if (plate.Length > 1) { BuilderUtil.SetRef(view, "plateClosed", plate[0]); BuilderUtil.SetRef(view, "plateOpen", plate[1]); }
+            BuilderUtil.SetRef(view, "fuseOk", BuilderUtil.First("sp_fusible_1"));
+            BuilderUtil.SetRef(view, "fuseBroken", BuilderUtil.First("sp_fusible_0"));
+            BuilderUtil.SetRef(view, "panelSprite", BuilderUtil.First("sp_panel"));
+            BuilderUtil.SetRef(view, "ventSprite", BuilderUtil.First("sp_ventilation"));
+            BuilderUtil.SetRef(view, "minimap", BuilderUtil.UiSprite("minimapa"));
+            BuilderUtil.SetRef(view, "iconHand", BuilderUtil.UiSprite("icon_mano"));
+            BuilderUtil.SetRef(view, "iconFuse", BuilderUtil.UiSprite("icon_fusible"));
+            BuilderUtil.SetRef(view, "iconFlashlight", BuilderUtil.UiSprite("icon_linterna_encender"));
+            BuilderUtil.SetRef(view, "iconCrank", BuilderUtil.UiSprite("icon_manivela"));
+            BuilderUtil.SetRef(view, "iconHide", BuilderUtil.UiSprite("icon_esconderse"));
+            BuilderUtil.SetRef(view, "iconExit", BuilderUtil.UiSprite("icon_salir"));
+            BuilderUtil.SetRef(view, "iconVent", BuilderUtil.UiSprite("icon_ventilacion"));
+            BuilderUtil.SetRef(view, "iconCamera", BuilderUtil.UiSprite("icon_camaras"));
             return panel.gameObject;
         }
 
@@ -357,7 +419,33 @@ namespace Alfredo.EditorTools
         }
 
         // Debe coincidir con el script que dibujó minimapa.png.
-        const float MapMinX = -140f, MapMinY = -130f, MapScale = 0.065f, MapUi = 0.85f;
+        const float MapUi = 0.85f;
+        // Posición de cada sala en minimapa.png (px, origen arriba a la izquierda). El mapa es lógico, no a
+        // escala: una puerta de ARRIBA lleva a la sala dibujada encima. Debe coincidir con el script que lo dibujó.
+        static readonly Dictionary<string, Rect> MapLayout = new Dictionary<string, Rect>
+        {
+            { "Despensa", Rect.MinMaxRect(10, 10, 135, 90) },
+            { "Cocina", Rect.MinMaxRect(10, 106, 135, 186) },
+            { "Cuarto secreto", Rect.MinMaxRect(147, 106, 272, 186) },
+            { "Almacen", Rect.MinMaxRect(284, 106, 409, 186) },
+            { "Mantenimiento", Rect.MinMaxRect(421, 106, 586, 186) },
+            { "Escenario", Rect.MinMaxRect(10, 202, 409, 282) },
+            { "Comedor", Rect.MinMaxRect(421, 202, 586, 378) },
+            { "Arcade", Rect.MinMaxRect(10, 298, 409, 378) },
+            { "Oficina", Rect.MinMaxRect(10, 394, 586, 474) },
+        };
+
+        static string MapLabel(string zone) =>
+            zone == "Almacen" ? "Almacén" : zone == "Cuarto secreto" ? "Cuarto\nsecreto" : zone == "Mantenimiento" ? "Manteni-\nmiento" : zone;
+
+        static bool MapCell(ZoneJson z, float scale, out Vector2 center, out float w, out float h)
+        {
+            center = Vector2.zero; w = h = 0f;
+            if (!MapLayout.TryGetValue(z.name, out var r)) return false;
+            w = r.width * scale; h = r.height * scale;
+            center = new Vector2(r.center.x * scale, -r.center.y * scale);
+            return true;
+        }
         static readonly (string zone, string label)[] CameraRooms =
         {
             ("Comedor", "CAM 01"), ("Mantenimiento", "CAM 02"), ("Cocina", "CAM 03"), ("Arcade", "CAM 04"),
@@ -380,17 +468,17 @@ namespace Alfredo.EditorTools
             camButtons = new Button[CameraRooms.Length];
             foreach (var z in map.zones)
             {
-                float x0 = (z.x - MapMinX) * MapScale * MapUi, y0 = (z.y - MapMinY) * MapScale * MapUi;
-                float w = z.w * MapScale * MapUi, h = z.h * MapScale * MapUi;
-                Vector2 center = new Vector2(x0 + w / 2f, -(y0 + h / 2f));
+                if (!MapCell(z, MapUi, out var center, out float w, out float h)) continue;
                 int cam = System.Array.FindIndex(CameraRooms, c => c.zone == z.name);
-                string label = z.name == "Almacen" ? "Almacén" : z.name;
+                string label = MapLabel(z.name);
                 if (z.name == "Oficina") label = "Oficina (tú)";
-                if (z.name == "Despensa") UiFactory.AddText("Sin camara " + z.name, content, "SIN CÁMARA", 15, new Vector2(0f, 1f), center + new Vector2(0f, -15f), new Vector2(w, 24f), TextAnchor.MiddleCenter, UiFactory.MutedText);
-                UiFactory.AddText("Sala " + z.name, content, label, 21, new Vector2(0f, 1f), center + new Vector2(0f, 9f), new Vector2(w, 30f), TextAnchor.MiddleCenter, null, FontStyle.Bold);
+                bool twoLines = label.Contains("\n");
+                float sub = twoLines ? -22f : -14f;
+                if (z.name == "Despensa") UiFactory.AddText("Sin camara " + z.name, content, "SIN CÁMARA", 14, new Vector2(0f, 1f), center + new Vector2(0f, sub), new Vector2(w, 22f), TextAnchor.MiddleCenter, UiFactory.MutedText);
+                UiFactory.AddText("Sala " + z.name, content, label, 18, new Vector2(0f, 1f), center + new Vector2(0f, twoLines ? 8f : 8f), new Vector2(w - 6f, twoLines ? 42f : 26f), TextAnchor.MiddleCenter, null, FontStyle.Bold);
                 if (cam >= 0)
                 {
-                    UiFactory.AddText("Cam " + z.name, content, CameraRooms[cam].label, 17, new Vector2(0f, 1f), center + new Vector2(0f, -15f), new Vector2(w, 26f), TextAnchor.MiddleCenter, UiFactory.MutedText);
+                    UiFactory.AddText("Cam " + z.name, content, CameraRooms[cam].label, 15, new Vector2(0f, 1f), center + new Vector2(0f, sub), new Vector2(w, 22f), TextAnchor.MiddleCenter, UiFactory.MutedText);
                     var hl = UiFactory.Rect("Resaltado " + z.name, highlightsRoot, new Vector2(0f, 1f), new Vector2(0f, 1f), center, new Vector2(w - 14f, h - 14f));
                     UiFactory.AddImage(hl, new Color(0.85f, 0.15f, 0.15f, 0.35f), false, white);
                     hl.gameObject.SetActive(cam == 0);
@@ -443,9 +531,7 @@ namespace Alfredo.EditorTools
             var ventIcon = BuilderUtil.UiSprite("icon_ventilacion");
             foreach (var z in map.zones)
             {
-                float x0 = (z.x - MapMinX) * MapScale * ui, y0 = (z.y - MapMinY) * MapScale * ui;
-                float w = z.w * MapScale * ui, h = z.h * MapScale * ui;
-                Vector2 center = new Vector2(x0 + w / 2f, -(y0 + h / 2f));
+                if (!MapCell(z, ui, out var center, out float w, out float h)) continue;
                 string label = z.name == "Almacen" ? "Almacén" : z.name;
                 bool hasVent = ventZones.Contains(z.name);
                 var box = UiFactory.Rect("Sala " + z.name, root, new Vector2(0f, 1f), new Vector2(0f, 1f), center, new Vector2(w - 16f, h - 16f));

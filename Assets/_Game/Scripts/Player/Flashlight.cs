@@ -16,8 +16,10 @@ namespace Alfredo
         [SerializeField] LayerMask sightBlockers;
         [SerializeField] float batterySeconds = 45f;
         [SerializeField] float fullChargeSeconds = 3f;
-        [SerializeField] float beamIntensity = 1.1f;
+        [SerializeField] float beamIntensity = 1.25f;
         [SerializeField] float lightHeight = 1.1f;
+        [Tooltip("Tamaño de un píxel del sprite del jugador en unidades (escala / 32)")]
+        [SerializeField] float spritePixel = 0.134f;
 
         float battery;
         float flicker;
@@ -55,7 +57,8 @@ namespace Alfredo
                 return;
             }
 
-            transform.position = player.Position + Vector2.up * lightHeight;
+            // El haz nace en la mano que sostiene la linterna (no en el centro del cuerpo).
+            transform.position = player.Position + HandOffset(player.Facing) * spritePixel;
             transform.rotation = Quaternion.Euler(0f, 0f, player.Facing.ToAngle());
 
             bool crank = TouchInput.CrankHeld && !player.IsHidden;
@@ -92,6 +95,18 @@ namespace Alfredo
                 }
             }
             SetLights(IsOn ? CurrentIntensity() : 0f);
+        }
+
+        /// <summary>Posición de la mano con la linterna en píxeles del sprite (32x52, origen en los pies).</summary>
+        static Vector2 HandOffset(Facing f)
+        {
+            switch (f)
+            {
+                case Facing.Down: return new Vector2(5f, 12f);
+                case Facing.Up: return new Vector2(-5f, 16f);
+                case Facing.Right: return new Vector2(9f, 13.5f);
+                default: return new Vector2(-9f, 13.5f);
+            }
         }
 
         float CurrentIntensity()

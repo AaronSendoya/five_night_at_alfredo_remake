@@ -14,6 +14,8 @@ namespace Alfredo
         [SerializeField] float flickerLowIntensity = 0.4f;
         [SerializeField] float offIntensity = 0.13f;
         [SerializeField] float blendSpeed = 4f;
+        [Tooltip("Intensidad mientras se mira el monitor de cámaras (las salas son oscuras y no se distinguían)")]
+        [SerializeField] float cameraIntensity = 1.25f;
         [SerializeField] Light2D[] poweredLights;
 
         PowerSystem power;
@@ -39,7 +41,8 @@ namespace Alfredo
             {
                 AudioManager.PlaySfx(Sfx.PowerOff);
                 AudioManager.PlayLoop(Sfx.PowerOutHum);
-                HudMessages.Show("¡Apagón! Repara los fusibles");
+                // Distingue el apagón por fusibles del interruptor general bajado a mano.
+                HudMessages.Show(!power.SwitchOn ? "Bajaste el interruptor general: sin luz" : "¡Apagón! Repara los fusibles");
             }
             else
             {
@@ -65,7 +68,9 @@ namespace Alfredo
                     break;
             }
             float speed = power.State == PowerState.Flickering ? 30f : blendSpeed;
-            globalLight.intensity = Mathf.MoveTowards(globalLight.intensity, target, speed * Time.deltaTime);
+            float goal = target;
+            if (CameraMonitor.AnyOpen && power.HasLight) { goal = cameraIntensity * (target / onIntensity); speed = Mathf.Max(speed, 12f); }
+            globalLight.intensity = Mathf.MoveTowards(globalLight.intensity, goal, speed * Time.deltaTime);
             if (poweredLights != null)
                 foreach (var l in poweredLights) if (l != null) l.enabled = power.HasLight;
         }

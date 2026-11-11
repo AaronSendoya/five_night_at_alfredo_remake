@@ -15,6 +15,15 @@ namespace Alfredo
         [SerializeField] Vector2 intervalSeconds = new Vector2(3f, 4.5f);
         [SerializeField] float idleMultiplier = 1.8f;
         [SerializeField, Range(0f, 1f)] float volume = 0.9f;
+        [Tooltip("Rugido o gemido al empezar a perseguirte")]
+        [SerializeField] AudioClip huntClip;
+        [SerializeField] float huntHearRange = 44f;
+        [SerializeField] float huntCooldown = 7f;
+
+        public AudioClip Clip => clip;
+
+        bool wasChasing;
+        float huntTimer;
 
         AudioSource source;
         PlayerController player;
@@ -33,7 +42,21 @@ namespace Alfredo
         void Update()
         {
             var gm = GameManager.Instance;
-            if (gm == null || !gm.IsPlaying || clip == null || player == null || !brain.IsActive) return;
+            if (gm == null || !gm.IsPlaying || clip == null || player == null || !brain.IsActive) { wasChasing = false; return; }
+            huntTimer -= Time.deltaTime;
+            bool chasing = brain.IsChasing;
+            if (chasing && !wasChasing && huntClip != null && huntTimer <= 0f)
+            {
+                huntTimer = huntCooldown;
+                float hd = PathDistance(player.Position, brain.Motor.Position);
+                if (hd < huntHearRange)
+                {
+                    float hk = 1f - hd / huntHearRange;
+                    source.panStereo = Mathf.Clamp((brain.Motor.Position.x - player.Position.x) / 18f, -0.8f, 0.8f);
+                    source.PlayOneShot(huntClip, Mathf.Lerp(0.35f, 1f, hk) * volume * SaveSystem.SfxVolume);
+                }
+            }
+            wasChasing = chasing;
             timer -= Time.deltaTime;
             if (timer > 0f) return;
             bool moving = brain.Motor.IsMoving;

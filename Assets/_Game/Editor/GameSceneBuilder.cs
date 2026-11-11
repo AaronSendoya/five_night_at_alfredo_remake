@@ -119,13 +119,24 @@ namespace Alfredo.EditorTools
             var panim = playerVisual.AddComponent<SpriteFrameAnimator>();
             playerGo.AddComponent<YSort>();
             var player = playerGo.AddComponent<PlayerController>();
+            playerGo.AddComponent<DoorDangerSense>();   // pasos apagados + borde rojo si hay alguien tras la puerta
             BuilderUtil.SetRef(player, "anim", panim);
-            BuilderUtil.SetDirectional(player, "sprites", BuilderUtil.Directional("sp_player"));
+            // Sin linterna hasta recogerla; luego, los cuadros con la linterna en la mano.
+            BuilderUtil.SetDirectional(player, "sprites", BuilderUtil.Directional("sp_player", "_sinlinterna"));
             BuilderUtil.SetDirectional(player, "runSprites", new DirectionalSprites
+            {
+                down = BuilderUtil.Frames("sp_player_correr_frente_sinlinterna"), up = BuilderUtil.Frames("sp_player_correr_atras_sinlinterna"),
+                right = BuilderUtil.Frames("sp_player_correr_derecha_sinlinterna"), left = BuilderUtil.Frames("sp_player_correr_izquierda_sinlinterna")
+            });
+            BuilderUtil.SetDirectional(player, "lightSprites", BuilderUtil.Directional("sp_player"));
+            BuilderUtil.SetDirectional(player, "lightRunSprites", new DirectionalSprites
             {
                 down = BuilderUtil.Frames("sp_player_correr_frente"), up = BuilderUtil.Frames("sp_player_correr_atras"),
                 right = BuilderUtil.Frames("sp_player_correr_derecha"), left = BuilderUtil.Frames("sp_player_correr_izquierda")
             });
+            psr.sprite = BuilderUtil.First("sp_player_caminar_frente_sinlinterna");
+            var pmotion = playerVisual.AddComponent<SpriteMotion>();
+            BuilderUtil.SetRef(player, "motion", pmotion);
             BuilderUtil.SetRefs(player, "hideFrames", BuilderUtil.Frames("sp_player_esconderse"));
             var interactor = playerGo.AddComponent<PlayerInteractor>();
             var spawn = new GameObject("Inicio del jugador").transform;
@@ -133,16 +144,19 @@ namespace Alfredo.EditorTools
 
             var flashGo = new GameObject("Linterna");
             var flashlight = flashGo.AddComponent<Flashlight>();
+            BuilderUtil.SetRef(player, "flashlight", flashlight);
             var beam = NewLight("Haz", flashGo.transform, Light2D.LightType.Point, 1.1f, new Color(1f, 0.95f, 0.8f));
-            beam.pointLightOuterRadius = 30f;
-            beam.pointLightInnerRadius = 4f;
-            beam.pointLightOuterAngle = 34f;
-            beam.pointLightInnerAngle = 16f;
+            // Haz más largo y ancho; Flashlight.Illuminates usa estos mismos valores (lo que ves es lo que alumbra a Rufus).
+            beam.pointLightOuterRadius = 38f;
+            beam.pointLightInnerRadius = 6f;
+            beam.pointLightOuterAngle = 52f;
+            beam.pointLightInnerAngle = 28f;
             var halo = NewLight("Halo", flashGo.transform, Light2D.LightType.Point, 0.6f, new Color(1f, 0.95f, 0.8f));
             halo.pointLightOuterRadius = 3.5f;
             halo.pointLightInnerRadius = 0.5f;
             BuilderUtil.SetRef(flashlight, "player", player);
             BuilderUtil.SetValue(flashlight, "lightHeight", p => p.floatValue = 1.1f * PlayerScale / 3.6f);
+            BuilderUtil.SetValue(flashlight, "spritePixel", p => p.floatValue = PlayerScale / 32f);
             BuilderUtil.SetRef(flashlight, "beam", beam);
             BuilderUtil.SetRef(flashlight, "halo", halo);
             BuilderUtil.SetValue(flashlight, "sightBlockers", p => p.intValue = sightMask);
@@ -181,6 +195,12 @@ namespace Alfredo.EditorTools
                         var w = go.AddComponent<Warp>();
                         float wpx = it.sx, hpx = it.sy;
                         w.area = new Rect(it.x / 32f, -(it.y / 32f + hpx), wpx, hpx);
+                        // El paso del original es una franja de 1 casilla pegada al muro: con la perspectiva
+                        // 3/4 el jugador ya está dentro del marco y aún no cruza. Se alarga hacia el piso
+                        // (abajo en puertas superiores, arriba en las inferiores) para cruzar al pisar el umbral.
+                        var wz = map.zones.Find(z => z.x <= it.x + 1f && it.x <= z.x + z.w && z.y <= it.y + 1f && it.y <= z.y + z.h);
+                        bool topDoor = wz == null || it.y < wz.y + wz.h * 0.5f;
+                        if (topDoor) w.area.yMin -= 1.0f; else w.area.yMax += 1.2f;
                         w.destination = Gm(it.tx, it.ty);
                         w.arrivalFacing = it.arrival != null && it.arrival.Contains("atras") ? Facing.Up : Facing.Down;
                         warpByGm[new Vector2(it.x, it.y)] = w;
@@ -206,7 +226,7 @@ namespace Alfredo.EditorTools
                         string zoneName = ZoneName(zoneList, at);
                         BuilderUtil.SetValue(h, "isVent", p => p.boolValue = true);
                         BuilderUtil.SetValue(h, "displayName", p => p.stringValue = zoneName);
-                        BuilderUtil.SetValue(h, "airSeconds", p => p.floatValue = 4f);
+                        BuilderUtil.SetValue(h, "airSeconds", p => p.floatValue = 5f); // 4 s del original + 1 s extra
                         BuilderUtil.SetValue(h, "cooldownSeconds", p => p.floatValue = 9.3f);
                         BuilderUtil.SetValue(h, "enterHoldSeconds", p => p.floatValue = 1f);
                         BuilderUtil.SetValue(h, "exitOffset", p => p.vector2Value = new Vector2(0f, -150f / 32f));
@@ -327,8 +347,10 @@ namespace Alfredo.EditorTools
             // ---------- Puertas de la oficina (cortina + placa) ----------
             var doorsRoot = BuilderUtil.Child("Puertas", mapRoot).transform;
             // Cortina: centro y ancho medidos sobre el hueco real del fondo de la oficina (px del mapa original).
-            BuildOfficeDoor("Puerta al comedor", doorsRoot, warpByGm, new Vector2(800f, 416f), new Vector2(4352f, 96f), 941.7f, 240f, 1151.5f);
-            BuildOfficeDoor("Puerta al arcade", doorsRoot, warpByGm, new Vector2(2336f, 416f), new Vector2(1280f, 1856f), 2470.5f, 240f, 2680f);
+            // Orientación: ambas puertas están arriba en la oficina, así que llevan a la parte de ABAJO
+            // de la sala siguiente (izquierda -> Arcade, derecha -> Comedor, como en el minimapa).
+            BuildOfficeDoor("Puerta al arcade", doorsRoot, warpByGm, new Vector2(800f, 416f), new Vector2(1280f, 3168f), 941.7f, 240f, 1151.5f);
+            BuildOfficeDoor("Puerta al comedor", doorsRoot, warpByGm, new Vector2(2336f, 416f), new Vector2(4354f, 1472f), 2470.5f, 240f, 2680f);
 
             // ---------- Puerta nueva: Comedor <-> Escenario (sin carteles) ----------
             BuildSideDoor("Puerta Comedor-Escenario", doorsRoot, warps, new Vector2(3086f, 1250f),
@@ -388,6 +410,7 @@ namespace Alfredo.EditorTools
             BuilderUtil.SetRef(monitor, "cameraName", ui.cameraName);
             BuilderUtil.SetRef(monitor, "staticOverlay", ui.staticOverlay);
             BuilderUtil.SetRef(monitor, "signalLost", ui.signalLost);
+            BuilderUtil.SetRef(monitor, "hudGroup", ui.hudGroup);
             BuilderUtil.SetRef(monitor, "recText", ui.recText);
             GameUiBuilder.WireMonitorButtons(ui, monitor);
             BuilderUtil.SetRefs(monitor, "mapHighlights", ui.mapHighlights);
@@ -472,12 +495,9 @@ namespace Alfredo.EditorTools
         /// <summary>Puerta de madera en una pared lateral (sprite 44x160 px a escala 1:1) y su paso hacia la otra sala.</summary>
         static void BuildSideDoor(string name, Transform parent, Transform warps, Vector2 doorGm, Rect area, Vector2 destination, Facing facing)
         {
+            // El vano, el marco y la hoja abierta están pintados en el fondo de cada sala (encajan con la pared);
+            // aquí solo queda el paso.
             var root = BuilderUtil.Child(name, parent);
-            var door = BuilderUtil.Child("Puerta", root.transform);
-            door.transform.position = Gm(doorGm.x, doorGm.y);
-            // El sprite está dibujado para la pared izquierda (manija a la derecha); en la pared derecha se refleja.
-            door.transform.localScale = new Vector3(facing == Facing.Left ? 1f : -1f, 1f, 1f);
-            BuilderUtil.AddSprite(door, BuilderUtil.First("sp_puerta_lateral")).sortingOrder = -20000;
 
             var go = BuilderUtil.Child("Paso", warps);
             go.transform.position = area.center;
@@ -485,6 +505,22 @@ namespace Alfredo.EditorTools
             w.area = area;
             w.destination = destination;
             w.arrivalFacing = facing;
+        }
+
+        /// <summary>
+        /// Grito del jumpscare: si en Audio/ hay un archivo "ignited-[freddy|chica|bonnie|foxy]-jumpscare..." (cualquier
+        /// formato) se usa ese; si no, el generado susto_[nombre].wav.
+        /// </summary>
+        static AudioClip FindScream(string who)
+        {
+            string gm = who == "alfredo" ? "freddy" : who == "matilda" ? "chica" : who == "bongo" ? "bonnie" : "foxy";
+            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets/_Game/Audio" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (Path.GetFileName(path).ToLowerInvariant().StartsWith("ignited-" + gm + "-jumpscare"))
+                    return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            }
+            return AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/susto_" + who + ".wav");
         }
 
         static string ZoneName(List<ZoneInfo> zones, Vector2 p)
@@ -520,6 +556,9 @@ namespace Alfredo.EditorTools
             var sprites = BuilderUtil.Directional(prefix, suffix);
             BuilderUtil.AddSprite(visual, sprites.down.Length > 0 ? sprites.down[0] : null);
             var anim = visual.AddComponent<SpriteFrameAnimator>();
+            var amotion = visual.AddComponent<SpriteMotion>();
+            BuilderUtil.SetValue(amotion, "leanDegrees", p => p.floatValue = 4f);
+            BuilderUtil.SetValue(amotion, "shadowWidth", p => p.floatValue = 1.8f);
             go.AddComponent<YSort>();
 
             var motor = go.AddComponent<AnimatronicMotor>();
@@ -542,6 +581,16 @@ namespace Alfredo.EditorTools
             var voice = go.AddComponent<AnimatronicVoice>();
             BuilderUtil.SetRef(voice, "brain", brain);
             BuilderUtil.SetRef(voice, "clip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/" + moveSound));
+            BuilderUtil.SetRef(voice, "huntClip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/" + moveSound.Replace("mov_", "caza_")));
+            string who = moveSound.Replace("mov_", "").Replace(".wav", "");
+            BuilderUtil.SetRef(brain, "scream", FindScream(who));
+            var lines = new System.Collections.Generic.List<Object>();
+            for (int i = 1; i <= 3; i++)
+            {
+                var c = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/frase_{who}_{i}.wav");
+                if (c != null) lines.Add(c);
+            }
+            BuilderUtil.SetRefs(brain, "deathLines", lines.ToArray());
             return brain;
         }
 

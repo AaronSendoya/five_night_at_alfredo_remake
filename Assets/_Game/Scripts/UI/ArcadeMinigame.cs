@@ -120,14 +120,18 @@ namespace Alfredo
             }
 
             Rect catchRect = RectIn(catcher);
-            catchRect.yMin = catchRect.yMax - catchRect.height * 0.45f; // las manos/cabeza
+            catchRect.yMin = catchRect.yMax - catchRect.height * 0.55f; // cabeza, brazos y torso
+            catchRect.xMin += catchRect.width * 0.12f; catchRect.xMax -= catchRect.width * 0.12f; // sin el margen transparente
             for (int i = pizzas.Count - 1; i >= 0; i--)
             {
                 var pz = pizzas[i];
                 var pos = pz.anchoredPosition;
-                pos.y -= pizzaSpeeds[i] * dt;
+                float step = pizzaSpeeds[i] * dt;
+                pos.y -= step;
                 pz.anchoredPosition = pos;
-                if (RectIn(pz).Overlaps(catchRect))
+                Rect pr = RectIn(pz);
+                pr.yMax += step; // barrido del fotograma: no se cuela entre dos cuadros si el móvil va lento
+                if (pr.Overlaps(catchRect))
                 {
                     score += pointsPerPizza;
                     AudioManager.PlaySfx(Sfx.Pickup);
@@ -227,10 +231,16 @@ namespace Alfredo
             livesText.text = "FALLOS: " + new string('X', misses) + new string('-', Mathf.Max(0, allowedMisses - misses));
         }
 
+        /// <summary>
+        /// Rectángulo en el espacio local del área de juego. Se usa localPosition (no anchoredPosition) porque el
+        /// jugador está anclado abajo y las pizzas al centro: con anchoredPosition la zona de captura quedaba
+        /// media pantalla más arriba que el dibujo y las pizzas "se atrapaban" en el aire o atravesaban al jugador.
+        /// </summary>
         Rect RectIn(RectTransform rt)
         {
-            Vector2 size = rt.rect.size;
-            return new Rect(rt.anchoredPosition - size * 0.5f, size);
+            var r = rt.rect;
+            Vector2 p = rt.localPosition;
+            return new Rect(p + r.position, r.size);
         }
     }
 }

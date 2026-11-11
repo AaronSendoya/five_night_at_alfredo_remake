@@ -22,7 +22,12 @@ namespace Alfredo
         public static Facing FromVector(Vector2 v, Facing fallback)
         {
             if (v.sqrMagnitude < 0.0001f) return fallback;
-            if (Mathf.Abs(v.y) >= Mathf.Abs(v.x)) return v.y > 0 ? Facing.Up : Facing.Down;
+            // Histéresis: cerca de la diagonal se mantiene la dirección actual (con joystick no parpadea entre dos sprites).
+            float ax = Mathf.Abs(v.x), ay = Mathf.Abs(v.y);
+            bool fallbackVertical = fallback == Facing.Up || fallback == Facing.Down;
+            bool sameSign = fallbackVertical ? (fallback == Facing.Up) == (v.y > 0f) : (fallback == Facing.Right) == (v.x > 0f);
+            if (sameSign && (fallbackVertical ? ay * 1.35f >= ax : ax * 1.35f >= ay)) return fallback;
+            if (ay >= ax) return v.y > 0 ? Facing.Up : Facing.Down;
             return v.x > 0 ? Facing.Right : Facing.Left;
         }
 

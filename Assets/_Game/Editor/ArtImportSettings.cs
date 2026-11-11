@@ -7,8 +7,9 @@ namespace Alfredo.EditorTools
 {
     /// <summary>
     /// Importación del pixel art: filtro Point, sin mipmaps, 32 píxeles por unidad y pivote igual al
-    /// origen del sprite en GameMaker. Personajes sin compresión; fondos en ASTC 4x4 en Android para
-    /// no gastar ~17 MB de memoria por fondo.
+    /// origen del sprite en GameMaker. Personajes sin compresión (son diminutos); fondos en ASTC 6x6 en
+    /// Android e iOS: ~1,2 MB por fondo de 2816x1536 en vez de 4,3 MB (ASTC 4x4) o 17 MB (sin comprimir).
+    /// Es lo que más pesa del APK y a la escala en que se ven los fondos la diferencia no se nota.
     /// </summary>
     public class ArtImportSettings : AssetPostprocessor
     {
@@ -58,11 +59,15 @@ namespace Alfredo.EditorTools
             settings.spritePivot = pivot;
             ti.SetTextureSettings(settings);
 
-            var android = ti.GetPlatformTextureSettings("Android");
-            android.overridden = background;
-            android.maxTextureSize = 4096;
-            android.format = TextureImporterFormat.ASTC_4x4;
-            ti.SetPlatformTextureSettings(android);
+            foreach (var platform in new[] { "Android", "iPhone" })
+            {
+                var ps = ti.GetPlatformTextureSettings(platform);
+                ps.overridden = background;
+                ps.maxTextureSize = 4096;
+                ps.format = TextureImporterFormat.ASTC_6x6;
+                ps.compressionQuality = 100; // mejor calidad de codificación: mismo peso, menos artefactos
+                ti.SetPlatformTextureSettings(ps);
+            }
         }
 
         [MenuItem("Alfredo/0. Reimportar arte", priority = 0)]
