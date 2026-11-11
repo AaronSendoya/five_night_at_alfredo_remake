@@ -27,7 +27,7 @@ namespace Alfredo
         public static string For(AnimatronicBrain who)
         {
             if (who is AlfredoBrain a && a.IsTracking)
-                return "Alfredo activa su modo Rastreo cada cierto tiempo (cada hora en la noche 2, cada 50 min en la 3 y cada 40 min en la 4) y va por ti estés donde estés. Para despistarlo: escóndete, usa una ventilación o ciérrale la puerta de la oficina.";
+                return "Alfredo te rastreaba: escóndete, entra a una ventila o cierra la puerta para perderlo.";
             return For(who.Id);
         }
 
@@ -35,10 +35,10 @@ namespace Alfredo
         {
             switch (id)
             {
-                case AnimatronicId.Alfredo: return "Alfredo es lento, pero cada cierto tiempo se ríe y embiste muy rápido. Cuando oigas su risa, escóndete o cierra las puertas de la oficina. Desde la noche 2 te rastrea cada cierto tiempo: ten cerca un escondite o una ventilación.";
-                case AnimatronicId.Matilda: return "Matilda va al panel a quemar fusibles y te persigue si te ve. Si oyes ollas golpeando cerca de Mantenimiento, espera escondido.";
-                case AnimatronicId.Bongo: return "Bongo patrulla sin descanso y te persigue en cuanto te ve. Escucha su guitarra: si suena fuerte, está cerca. Rompe su línea de visión y escóndete.";
-                default: return "Rufus solo caza sin luz y es el más rápido. Apúntale con la linterna para que vuelva al escenario y repara la luz cuanto antes.";
+                case AnimatronicId.Alfredo: return "Si oyes la risa de Alfredo, va a embestir: escóndete ya.";
+                case AnimatronicId.Matilda: return "¿Ollas cerca de Mantenimiento? Es Matilda: espera escondido.";
+                case AnimatronicId.Bongo: return "Guitarra fuerte = Bongo cerca. Rompe su vista y escóndete.";
+                default: return "Rufus caza a oscuras: apúntale con la linterna y no la gastes en vano.";
             }
         }
 

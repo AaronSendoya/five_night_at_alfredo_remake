@@ -144,6 +144,9 @@ namespace Alfredo
         /// El jugador hizo demasiado ruido corriendo cerca (misma sala o vecina): va a cazarlo un rato.
         /// Lo pierde con las mecánicas de siempre (escondite, ventilación, puerta de la oficina).
         /// </summary>
+        /// <summary>Hasta cuántas salas de distancia oye el ruido del jugador (1 = la suya y las vecinas).</summary>
+        public virtual int NoiseHearRooms => 1;
+
         public void HearNoise(float seconds)
         {
             if (!IsAwake || player == null || player.IsUndetectable) return;

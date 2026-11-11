@@ -433,7 +433,7 @@ namespace Alfredo
                         break;
                     case S.Lit:
                         fleeT += dt;
-                        battery01 = Mathf.Max(0f, battery01 - dt * 0.22f);
+                        battery01 = Mathf.Max(0f, battery01 - dt * 0.29f);
                         if (pressed) { Go(S.Approach); AudioManager.PlaySfx(Sfx.FlashlightOff); }
                         else if (battery01 <= 0.08f) { Go(S.Empty); AudioManager.PlaySfx(Sfx.BatteryEmpty); }
                         break;
@@ -441,7 +441,7 @@ namespace Alfredo
                         if (held || stateT > 3f) Go(S.Charging);
                         break;
                     case S.Charging:
-                        battery01 = Mathf.Min(1f, battery01 + dt * (held ? 0.55f : 0.3f));
+                        battery01 = Mathf.Min(1f, battery01 + dt * (held ? 0.32f : 0.18f));
                         if (battery01 >= 1f) Go(S.Approach);
                         break;
                 }

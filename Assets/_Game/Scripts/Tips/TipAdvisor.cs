@@ -30,8 +30,8 @@ namespace Alfredo
             if (flashlight != null) flashlight.BatteryEmpty -= OnBatteryEmpty;
         }
 
-        void OnHideMessage(string m) => Tip("aire", "Sal del escondite antes de que se acabe el aire, o tendrás que esperar para volver a esconderte.", 60f);
-        void OnBatteryEmpty() => Tip("bateria", "Linterna sin batería: mantén el botón Manivela para recargarla (no puedes moverte mientras giras).", 60f);
+        void OnHideMessage(string m) => Tip("aire", "Sal antes de que se acabe el aire.", 60f);
+        void OnBatteryEmpty() => Tip("bateria", "Sin batería: mantén Manivela. Recarga lento, úsala solo cuando haga falta.", 60f);
 
         bool Tip(string key, string text, float cooldown)
         {
@@ -52,7 +52,7 @@ namespace Alfredo
             flickerTime = power.State == PowerState.Flickering ? flickerTime + dt : 0f;
             doorsTime = OfficeDoor.ClosedCount > 0 ? doorsTime + dt : 0f;
             camTime = CameraMonitor.AnyOpen ? camTime + dt : 0f;
-            if (camTime > 12f) Tip("camaras", "Mirar las cámaras también gasta energía (la mitad que una puerta cerrada): los fusibles se queman antes. Míralas solo lo necesario.", 90f);
+            if (camTime > 12f) Tip("camaras", "Las cámaras gastan energía: míralas lo justo.", 90f);
             exhaustedTime = player.IsExhausted ? exhaustedTime + dt : 0f;
 
             check -= dt;
@@ -61,18 +61,18 @@ namespace Alfredo
 
             if (blackoutTime > 12f)
             {
-                if (!power.SwitchOn) Tip("switch", "El interruptor general está apagado: enciéndelo en Mantenimiento.", 30f);
-                else if (player.Inventory.Fuses > 0) Tip("instalar", "Tienes fusibles: llévalos al panel de Mantenimiento y mantén Usar para instalarlos.", 30f);
-                else Tip("buscar", "Sin luz: busca fusibles brillantes por el mapa y llévalos al panel de Mantenimiento.", 35f);
+                if (!power.SwitchOn) Tip("switch", "Enciende el interruptor en Mantenimiento.", 30f);
+                else if (player.Inventory.Fuses > 0) Tip("instalar", "Tienes fusibles: instálalos en el panel de Mantenimiento.", 30f);
+                else Tip("buscar", "Sin luz: busca fusibles brillantes por el mapa.", 35f);
             }
             if (blackoutTime > 20f && flashlight != null && flashlight.HasFlashlight)
-                Tip("rufus", "Rufus caza a oscuras: apúntale con la linterna para que vuelva al escenario.", 90f);
-            if (flickerTime > 15f) Tip("parpadeo", "Hay un fusible quemado: cámbialo antes de que se vaya toda la luz.", 60f);
-            if (doorsTime > 20f) Tip("puertas", "Las puertas cerradas gastan energía: los fusibles se queman antes (cada puerta suma). Ábrelas cuando no las necesites.", 60f);
-            if (exhaustedTime > 0.5f) Tip("agotado", "Corre a ratos: si gastas toda la resistencia no podrás correr unos segundos.", 120f);
+                Tip("rufus", "Rufus caza a oscuras: apúntale con la linterna.", 90f);
+            if (flickerTime > 15f) Tip("parpadeo", "Fusible quemado: cámbialo antes del apagón.", 60f);
+            if (doorsTime > 20f) Tip("puertas", "Puertas cerradas gastan energía: ábrelas si no hacen falta.", 60f);
+            if (exhaustedTime > 0.5f) Tip("agotado", "Corre a ratos: sin resistencia no puedes correr.", 120f);
             if (playTime > 45f && flashlight != null && !flashlight.HasFlashlight)
-                Tip("linterna", "Recoge la linterna en la oficina: la necesitarás cuando se vaya la luz.", 90f);
-            if (ShadowFreddy.IsActive) Tip("shadow", "Con 2 fusibles o menos, Shadow Alfredo te acosa desde el cuarto secreto. No puede atraparte: repara la luz para callarlo.", 120f);
+                Tip("linterna", "Recoge la linterna en la oficina.", 90f);
+            if (ShadowFreddy.IsActive) Tip("shadow", "Shadow Alfredo no puede atraparte: repara la luz para callarlo.", 120f);
         }
     }
 }

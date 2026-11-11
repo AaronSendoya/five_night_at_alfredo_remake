@@ -602,6 +602,7 @@ namespace Alfredo.EditorTools
                 if (c != null) lines.Add(c);
             }
             BuilderUtil.SetRefs(brain, "deathLines", lines.ToArray());
+            if (brain is RufusBrain) BuilderUtil.SetRef(brain, "songClip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/rufus_cancion.wav"));
             return brain;
         }
 

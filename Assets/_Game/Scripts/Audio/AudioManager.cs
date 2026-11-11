@@ -158,6 +158,8 @@ namespace Alfredo
             instance.sfxSource.PlayOneShot(clip, volume * SaveSystem.SfxVolume);
         }
 
+        public static AudioClip GetClip(Sfx id) => instance != null && instance.map.TryGetValue(id, out var c) ? c.clip : null;
+
         public static void PlayLoop(Sfx id, bool loop = true)
         {
             if (instance == null || !instance.map.TryGetValue(id, out var c)) return;

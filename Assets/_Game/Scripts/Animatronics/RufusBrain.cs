@@ -20,8 +20,22 @@ namespace Alfredo
         [Tooltip("Alto del sprite en unidades (para saber si el haz le toca pies, cuerpo o cabeza)")]
         [SerializeField] float bodyHeight = 7.2f;
 
+        [Header("Canción en la oscuridad")]
+        [Tooltip("Suena mientras patrulla en un apagón")]
+        [SerializeField] AudioClip songClip;
+        [SerializeField] float songEveryGameMinutes = 15f;
+        [Tooltip("Velocidad extra al PATRULLAR mientras suena (no afecta a la caza)")]
+        [SerializeField] float songSpeedMultiplier = 1.3f;
+        [SerializeField] float songHearRange = 50f;
+        [SerializeField, Range(0f, 1f)] float songVolume = 1f;
+
         float huntTimer;
         float homeTimer;
+        float songTimer;
+        float songLeft;
+        float secondsPerHour = 70f;
+        AudioSource songSource;
+        bool SongPlaying => songLeft > 0f;
         bool retreating;
 
         protected override bool CanCatch => !retreating;
@@ -33,8 +47,48 @@ namespace Alfredo
             if (!PowerSystem.Instance.HasLight && !retreating) huntTimer = Mathf.Max(huntTimer, seconds);
         }
 
+        protected override void OnConfigured(NightConfig night)
+        {
+            secondsPerHour = night.secondsPerHour > 0f ? night.secondsPerHour : 70f;
+            songTimer = SongInterval * 0.5f;
+            StopSong();
+        }
+
+        float SongInterval => songEveryGameMinutes / 60f * secondsPerHour;
+
+        void StartSong()
+        {
+            if (songClip == null) return;
+            if (songSource == null)
+            {
+                songSource = gameObject.AddComponent<AudioSource>();
+                songSource.playOnAwake = false;
+                songSource.spatialBlend = 0f;
+            }
+            songSource.clip = songClip;
+            songSource.Play();
+            songLeft = songClip.length;
+            songTimer = SongInterval;
+        }
+
+        void StopSong()
+        {
+            songLeft = 0f;
+            if (songSource != null) songSource.Stop();
+        }
+
+        /// <summary>Volumen por distancia real (también desde salas vecinas) y paneo hacia su lado.</summary>
+        void UpdateSongVolume()
+        {
+            if (songSource == null || !SongPlaying || player == null) return;
+            float d = AnimatronicVoice.PathDistance(player.Position, motor.Position);
+            songSource.volume = AlfredoBrain.DistanceVolume(d, songHearRange) * songVolume * SaveSystem.SfxVolume;
+            songSource.panStereo = Mathf.Clamp((motor.Position.x - player.Position.x) / 18f, -0.8f, 0.8f);
+        }
+
         protected override void OnResetToHome()
         {
+            StopSong();
             huntTimer = 0f; homeTimer = 0f; retreating = false;
         }
 
@@ -49,6 +103,8 @@ namespace Alfredo
         protected override void Think(float dt)
         {
             bool lit = Lit();
+            if (SongPlaying) { songLeft -= dt; UpdateSongVolume(); if (songLeft <= 0f) StopSong(); }
+            if (PowerSystem.Instance.HasLight && SongPlaying) StopSong();
 
             if (retreating)
             {
@@ -101,8 +157,13 @@ namespace Alfredo
                 if (HuntPlayer(fast, dt)) return;
             }
             else EndHunt();
-            Patrol(dt, Px(roamSpeedPx));
+            // Patrullando a oscuras: cada ~15 minutos del juego canta, y mientras suena patrulla más rápido.
+            songTimer -= dt;
+            if (!SongPlaying && songTimer <= 0f) StartSong();
+            Patrol(dt, Px(roamSpeedPx) * (SongPlaying ? songSpeedMultiplier : 1f));
         }
+
+        void OnDisable() => StopSong();
 
         void StandHome()
         {

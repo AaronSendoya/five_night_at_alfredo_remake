@@ -43,6 +43,8 @@ namespace Alfredo
         [SerializeField] float warpFreezeSeconds = 0f;
         [Tooltip("Segundos sin poder ser atrapado justo después de cruzar una puerta")]
         [SerializeField] float warpInvulnerableSeconds = 0.5f;
+        [Tooltip("Margen al salir de una ventilación por si un animatrónico espera en la rejilla")]
+        [SerializeField] float ventExitInvulnerableSeconds = 1.5f;
 
         Rigidbody2D rb;
         BoxCollider2D body;
@@ -255,6 +257,7 @@ namespace Alfredo
             if (motion != null) motion.Appear(wasVent);
             hideAnim = 0f;
             Teleport(exitPosition, Facing);
+            if (wasVent) invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + ventExitInvulnerableSeconds);
             SetVisible(true);
             HiddenChanged?.Invoke(false);
         }

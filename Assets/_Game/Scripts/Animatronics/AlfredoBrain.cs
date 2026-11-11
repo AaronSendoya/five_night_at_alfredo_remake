@@ -16,7 +16,7 @@ namespace Alfredo
     /// </summary>
     public class AlfredoBrain : AnimatronicBrain
     {
-        [SerializeField] float stalkSpeedPx = 2.5f;
+        [SerializeField] float stalkSpeedPx = 2.9f;   // patrulla (antes 2,5)
         [SerializeField] float rushSpeedPx = 4.6f;
         [SerializeField] float rushSeconds = 9f;
         [SerializeField] Vector2 firstRushRange = new Vector2(20f, 30f);
@@ -34,7 +34,7 @@ namespace Alfredo
 
         int nightNumber;
         float secondsPerHour = 70f;
-        float trackTimer = float.PositiveInfinity;
+        float rastreoTimer = float.PositiveInfinity;
         float TrackInterval
         {
             get
@@ -43,7 +43,7 @@ namespace Alfredo
                 return trackEveryGameMinutes[i] / 60f * secondsPerHour;
             }
         }
-        bool WantsToTrack => nightNumber >= trackFromNight && player != null && trackTimer <= 0f && !player.IsUndetectable;
+        bool WantsToTrack => nightNumber >= trackFromNight && player != null && rastreoTimer <= 0f && !player.IsUndetectable;
         // Desde la noche 2: aunque Alfredo aún no haya despertado en el escenario,
         // despierta para ir por quien se queda quieto; al terminar vuelve a su sitio.
         protected override bool ForceAwake => tracking || returningHome || WantsToTrack;
@@ -58,7 +58,7 @@ namespace Alfredo
         {
             nightNumber = night.night;
             secondsPerHour = night.secondsPerHour > 0f ? night.secondsPerHour : 70f;
-            trackTimer = nightNumber >= trackFromNight ? TrackInterval : float.PositiveInfinity;
+            rastreoTimer = nightNumber >= trackFromNight ? TrackInterval : float.PositiveInfinity;
             rushing = false;
             tracking = false;
             returningHome = false;
@@ -68,13 +68,13 @@ namespace Alfredo
         protected override void OnResetToHome()
         {
             StopTracking(false); returningHome = false; StopRush();
-            if (nightNumber >= trackFromNight) trackTimer = TrackInterval;
+            if (nightNumber >= trackFromNight) rastreoTimer = TrackInterval;
         }
 
         // El enfriamiento corre siempre (aunque Alfredo esté dormido en el escenario).
         protected override void AlwaysTick(float dt)
         {
-            if (!tracking && nightNumber >= trackFromNight && trackTimer > 0f && trackTimer < float.PositiveInfinity) trackTimer -= dt;
+            if (!tracking && nightNumber >= trackFromNight && rastreoTimer > 0f && rastreoTimer < float.PositiveInfinity) rastreoTimer -= dt;
         }
 
         // Ruido: si ya está despierto, embiste.
@@ -83,7 +83,7 @@ namespace Alfredo
             if (tracking || rushing || returningHome) return;
             rushing = true;
             rushTimer = Mathf.Max(seconds, rushSeconds * 0.6f);
-            AudioManager.PlayLoop(Sfx.AlfredoLaugh);
+            StartLaugh();
         }
 
         protected override void Think(float dt)
@@ -125,7 +125,7 @@ namespace Alfredo
             {
                 rushing = true;
                 rushTimer = rushSeconds;
-                AudioManager.PlayLoop(Sfx.AlfredoLaugh);
+                StartLaugh();
                 return;
             }
             float stalk = Px(stalkSpeedPx);
@@ -135,11 +135,11 @@ namespace Alfredo
 
         void StartTracking()
         {
-            if (rushing) { rushing = false; AudioManager.StopLoop(Sfx.AlfredoLaugh); }
+            if (rushing) { rushing = false; StopLaugh(); }
             tracking = true;
             blockedTimer = 0f;
             MarkChasing();
-            AudioManager.PlayLoop(Sfx.AlfredoLaugh);
+            StartLaugh();
             HudMessages.Show("¡Alfredo te está rastreando! Escóndete");
         }
 
@@ -160,9 +160,9 @@ namespace Alfredo
         {
             if (!tracking) return;
             tracking = false;
-            AudioManager.StopLoop(Sfx.AlfredoLaugh);
+            StopLaugh();
             if (player != null) player.ResetZoneTimer();
-            trackTimer = TrackInterval;   // vuelve a empezar el enfriamiento
+            rastreoTimer = TrackInterval;   // vuelve a empezar el enfriamiento
             EndHunt();
             cooldown = Mathf.Max(cooldown, rushCooldownRange.x);
             if (lostPlayer) HudMessages.Show("Alfredo perdió tu rastro");
@@ -171,12 +171,54 @@ namespace Alfredo
 
         void StopRush()
         {
-            if (rushing) AudioManager.StopLoop(Sfx.AlfredoLaugh);
+            if (rushing) StopLaugh();
             rushing = false;
             cooldown = Random.Range(rushCooldownRange.x, rushCooldownRange.y);
             EndHunt();
         }
 
-        void OnDisable() => AudioManager.StopLoop(Sfx.AlfredoLaugh);
+        // ---- Risa con volumen según la distancia real al jugador ----
+        [SerializeField] float laughHearRange = 50f;
+        AudioSource laughSource;
+
+        void StartLaugh()
+        {
+            var clip = AudioManager.GetClip(Sfx.AlfredoLaugh);
+            if (clip == null) return;
+            if (laughSource == null)
+            {
+                laughSource = gameObject.AddComponent<AudioSource>();
+                laughSource.playOnAwake = false;
+                laughSource.loop = true;
+                laughSource.spatialBlend = 0f;
+            }
+            laughSource.clip = clip;
+            UpdateLaughVolume();
+            if (!laughSource.isPlaying) laughSource.Play();
+        }
+
+        void StopLaugh()
+        {
+            if (laughSource != null) laughSource.Stop();
+        }
+
+        void UpdateLaughVolume()
+        {
+            if (laughSource == null || player == null) return;
+            laughSource.volume = DistanceVolume(AnimatronicVoice.PathDistance(player.Position, motor.Position), laughHearRange) * SaveSystem.SfxVolume;
+            laughSource.panStereo = Mathf.Clamp((motor.Position.x - player.Position.x) / 18f, -0.8f, 0.8f);
+        }
+
+        /// <summary>Curva de volumen por distancia: casi nada a lo lejos, sube de forma progresiva al acercarse.</summary>
+        public static float DistanceVolume(float d, float range)
+        {
+            if (float.IsInfinity(d) || d >= range) return 0.04f;
+            float k = 1f - d / range;
+            return Mathf.Lerp(0.04f, 1f, Mathf.Pow(k, 1.6f));
+        }
+
+        void LateUpdate() { if (laughSource != null && laughSource.isPlaying) UpdateLaughVolume(); }
+
+        void OnDisable() => StopLaugh();
     }
 }

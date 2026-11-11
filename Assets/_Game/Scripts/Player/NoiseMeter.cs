@@ -52,7 +52,7 @@ namespace Alfredo
             if (!tipShown && Noise01 > 0.05f)
             {
                 tipShown = true;
-                HudTips.Show("¡Correr hace RUIDO! Tras 2,5 s corriendo el medidor sube. Si llega a ROJO, los animatrónicos de esta sala y de las salas de al lado te oyen y vienen a cazarte. Camina para que baje.", true);
+                HudTips.Show("Correr hace ruido: en ROJO te oyen las salas cercanas. Camina.", true);
             }
 
             alertTimer -= dt;

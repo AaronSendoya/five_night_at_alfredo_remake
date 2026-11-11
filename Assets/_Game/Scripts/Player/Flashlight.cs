@@ -16,6 +16,10 @@ namespace Alfredo
         [SerializeField] LayerMask sightBlockers;
         [SerializeField] float batterySeconds = 45f;
         [SerializeField] float fullChargeSeconds = 3f;
+        [Tooltip("Nerfeo: la manivela recarga un 70 % más lento (tarda 1,7 veces más)")]
+        [SerializeField] float rechargeSlowdown = 1.7f;
+        [Tooltip("Nerfeo: encendida gasta un 30 % más de batería")]
+        [SerializeField] float drainMultiplier = 1.3f;
         [SerializeField] float beamIntensity = 1.25f;
         [SerializeField] float lightHeight = 1.1f;
         [Tooltip("Tamaño de un píxel del sprite del jugador en unidades (escala / 32)")]
@@ -68,7 +72,7 @@ namespace Alfredo
                 if (crank) { player.Lock(this); IsOn = false; AudioManager.PlayLoop(Sfx.CrankLoop); }
                 else { player.Unlock(this); AudioManager.StopLoop(Sfx.CrankLoop); }
             }
-            if (IsCranking) battery = Mathf.Min(batterySeconds, battery + batterySeconds / fullChargeSeconds * Time.deltaTime);
+            if (IsCranking) battery = Mathf.Min(batterySeconds, battery + batterySeconds / (fullChargeSeconds * rechargeSlowdown) * Time.deltaTime);
 
             if (TouchInput.ConsumeFlashlight() && !IsCranking && battery > 0f && !player.IsHidden)
             {
@@ -80,7 +84,7 @@ namespace Alfredo
 
             if (IsOn)
             {
-                battery -= Time.deltaTime;
+                battery -= Time.deltaTime * drainMultiplier;
                 if (!lowWarned && Battery01 <= 0.2f)
                 {
                     lowWarned = true;

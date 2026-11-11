@@ -11,10 +11,10 @@ namespace Alfredo
     [RequireComponent(typeof(PlayerController))]
     public class DoorDangerSense : MonoBehaviour
     {
-        [SerializeField] float doorRange = 10f;      // a qué distancia de la puerta empiezas a notarlo
-        [SerializeField] float otherSideRange = 14f; // a qué distancia de la salida debe estar el animatrónico
+        [SerializeField] float doorRange = 17f;      // a qué distancia de la puerta empiezas a notarlo (más anticipación)
+        [SerializeField] float otherSideRange = 22f; // a qué distancia de la salida debe estar el animatrónico
         [SerializeField, Range(0f, 1f)] float maxVolume = 0.75f;
-        [SerializeField, Range(0f, 1f)] float maxGlow = 0.5f;
+        [SerializeField, Range(0f, 1f)] float maxGlow = 0.6f;
         [SerializeField] float lowPassHz = 650f;
 
         PlayerController player;
@@ -94,8 +94,8 @@ namespace Alfredo
                     if (zones.NearestZone(a.Motor.Position) != w.ToZone) continue;
                     float dA = Vector2.Distance(a.Motor.Position, w.destination);
                     if (dA > otherSideRange) continue;
-                    float k = (1f - dDoor / doorRange) * (1f - dA / otherSideRange);
-                    k = Mathf.Sqrt(k); // se nota antes, no solo pegado a la puerta
+                    // Se nota desde lejos (mínimo claro) y crece al acercarte a la puerta o al acercarse él a la salida.
+                    float k = Mathf.Lerp(0.35f, 1f, 1f - dDoor / doorRange) * Mathf.Lerp(0.45f, 1f, 1f - dA / otherSideRange);
                     if (k > danger) { danger = k; culprit = a; best = w; }
                 }
             }

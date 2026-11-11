@@ -25,7 +25,7 @@ namespace Alfredo
         [SerializeField] AudioClip[] steps;
         [SerializeField] float stepPitch = 1f;
         [SerializeField] float stepStride = 2.2f;          // unidades recorridas por pisada
-        [SerializeField] float stepHearRange = 28f;        // por el recorrido real
+        [SerializeField] float stepHearRange = 34f;        // por el recorrido real
         [SerializeField, Range(0f, 1f)] float stepVolume = 0.85f;
 
         public AudioClip Clip => clip;
@@ -100,14 +100,13 @@ namespace Alfredo
             stepAcc = 0f;
             float d = PathDistance(player.Position, p);
             if (d >= stepHearRange) return;
-            float k = 1f - d / stepHearRange;
-            k = k * k * (3f - 2f * k);                        // suave: casi nada lejos, fuerte muy cerca
+            float k = AlfredoBrain.DistanceVolume(d, stepHearRange);   // progresivo: suave lejos, fuerte cerca
             int i = Random.Range(0, steps.Length);
             if (steps.Length > 1 && i == lastStep) i = (i + 1) % steps.Length;
             lastStep = i;
             stepSource.pitch = stepPitch * Random.Range(0.94f, 1.06f) * (brain.IsChasing ? 1.06f : 1f);
             stepSource.panStereo = Mathf.Clamp((p.x - player.Position.x) / 18f, -0.85f, 0.85f);
-            stepSource.PlayOneShot(steps[i], Mathf.Lerp(0.05f, 1f, k) * stepVolume * (brain.IsChasing ? 1.15f : 1f) * SaveSystem.SfxVolume);
+            stepSource.PlayOneShot(steps[i], k * stepVolume * (brain.IsChasing ? 1.15f : 1f) * SaveSystem.SfxVolume);
         }
 
         /// <summary>Distancia a pie: misma sala = línea recta; sala vecina = hasta la puerta y desde su salida.</summary>

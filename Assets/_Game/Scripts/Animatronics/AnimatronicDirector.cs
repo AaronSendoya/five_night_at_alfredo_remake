@@ -57,14 +57,22 @@ namespace Alfredo
             var zones = MapZones.Instance;
             if (zones == null || p == null) return 0;
             var here = zones.NearestZone(p.Position);
-            var near = new HashSet<ZoneInfo> { here };
-            foreach (var w in Warp.All)
-                if (w != null && w.FromZone == here && w.ToZone != null) near.Add(w.ToZone);
+            // Distancia en salas desde la del jugador (0 = la misma, 1 = vecinas, 2 = vecinas de las vecinas).
+            var dist = new Dictionary<ZoneInfo, int> { { here, 0 } };
+            var frontier = new List<ZoneInfo> { here };
+            for (int step = 1; step <= 2; step++)
+            {
+                var next = new List<ZoneInfo>();
+                foreach (var z in frontier)
+                    foreach (var w in Warp.All)
+                        if (w != null && w.FromZone == z && w.ToZone != null && !dist.ContainsKey(w.ToZone)) { dist[w.ToZone] = step; next.Add(w.ToZone); }
+                frontier = next;
+            }
             int heard = 0;
             foreach (var a in animatronics)
             {
                 if (!a.IsAwake) continue;
-                if (!near.Contains(zones.NearestZone(a.Motor.Position))) continue;
+                if (!dist.TryGetValue(zones.NearestZone(a.Motor.Position), out int rooms) || rooms > a.NoiseHearRooms) continue;
                 a.HearNoise(seconds);
                 heard++;
             }
