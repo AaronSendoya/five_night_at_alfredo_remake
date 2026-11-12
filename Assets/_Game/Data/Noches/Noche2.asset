@@ -28,3 +28,4 @@ MonoBehaviour:
   fuseBurnChance: 35
   startBrokenFuses: 0
   fuseSpawnSeconds: 30
+  fuseExcludedZones: []

@@ -66,6 +66,8 @@ namespace Alfredo.EditorTools
                 cfg.fuseBurnChance = d.chance;
                 cfg.startBrokenFuses = d.broken;
                 cfg.fuseSpawnSeconds = d.spawn;
+                // Desde la noche 3 no aparecen repuestos en las zonas más peligrosas (los animatrónicos y Shadow Alfredo).
+                cfg.fuseExcludedZones = d.n >= 3 ? new[] { "Escenario", "Cuarto secreto" } : new string[0];
                 EditorUtility.SetDirty(cfg);
                 result[i] = cfg;
             }

@@ -34,6 +34,8 @@ namespace Alfredo
         [Range(0, 100)] public float fuseBurnChance = 40f;
         public int startBrokenFuses;
         public float fuseSpawnSeconds = 60f;
+        [Tooltip("Zonas donde NO aparecen fusibles de repuesto en esta noche (nombres del mapa: Escenario, Cuarto secreto...)")]
+        public string[] fuseExcludedZones = new string[0];
 
         public int AiLevel(AnimatronicId id)
         {

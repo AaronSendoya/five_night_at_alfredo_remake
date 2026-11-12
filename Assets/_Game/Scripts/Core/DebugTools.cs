@@ -5,7 +5,8 @@ namespace Alfredo
     /// <summary>
     /// Atajos de prueba (solo en el editor y en compilaciones de desarrollo):
     /// F1 reloj x10, F2 despierta a los animatrónicos, F3 quema un fusible, F4 da un fusible,
-    /// F5 lleva al jugador al escenario, F6 recorre puntos clave del mapa, F9 guarda una captura en Capturas/.
+    /// F5 lleva al jugador al escenario, F6 recorre puntos clave del mapa, F9 guarda una captura en Capturas/,
+    /// F11 fuerza un turno de aparición de fusibles.
     /// </summary>
     public class DebugTools : MonoBehaviour
     {
@@ -36,6 +37,7 @@ namespace Alfredo
                 HudMessages.Show(SpotNames[spot]);
             }
             if (Input.GetKeyDown(KeyCode.F7)) showInfo = !showInfo;
+            if (Input.GetKeyDown(KeyCode.F11)) { var fs = FindFirstObjectByType<FuseSpawner>(); if (fs != null) fs.DebugTick(); }
             if (Input.GetKeyDown(KeyCode.F10) && player.TryGetComponent<NoiseMeter>(out var nm)) nm.DebugMaxNoise();
             if (Input.GetKeyDown(KeyCode.F8)) { AnimatronicBrain.DebugFreeze = !AnimatronicBrain.DebugFreeze; HudMessages.Show(AnimatronicBrain.DebugFreeze ? "Animatrónicos congelados" : "Animatrónicos libres"); }
             if (Input.GetKeyDown(KeyCode.F9))

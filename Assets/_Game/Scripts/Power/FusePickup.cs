@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Alfredo
@@ -10,9 +11,21 @@ namespace Alfredo
         Vector3 baseLocal;
 
         public static int CountOnMap { get; private set; }
+        /// <summary>Fusibles que hay ahora mismo en el mapa (incluye el que ya está puesto al empezar la noche).</summary>
+        public static readonly List<FusePickup> Active = new List<FusePickup>();
 
-        protected override void OnEnable() { base.OnEnable(); CountOnMap++; }
-        protected override void OnDisable() { base.OnDisable(); CountOnMap--; }
+        /// <summary>Momento en que apareció o se cambió de sitio por última vez: sirve para saber cuál es el más viejo.</summary>
+        public float SpawnTime { get; private set; }
+
+        protected override void OnEnable() { base.OnEnable(); CountOnMap++; Active.Add(this); SpawnTime = Time.time; }
+        protected override void OnDisable() { base.OnDisable(); CountOnMap--; Active.Remove(this); }
+
+        /// <summary>Cambia el fusible de sitio y lo cuenta como recién aparecido.</summary>
+        public void MoveTo(Vector2 position)
+        {
+            transform.position = position;
+            SpawnTime = Time.time;
+        }
 
         void Start()
         {

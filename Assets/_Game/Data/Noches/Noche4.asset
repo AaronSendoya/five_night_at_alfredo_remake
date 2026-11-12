@@ -28,3 +28,6 @@ MonoBehaviour:
   fuseBurnChance: 45
   startBrokenFuses: 2
   fuseSpawnSeconds: 20
+  fuseExcludedZones:
+  - Escenario
+  - Cuarto secreto

@@ -56,6 +56,7 @@
     <Compile Include="Assets\_Game\Editor\GameUiBuilder.cs" />
     <Compile Include="Assets\_Game\Editor\UiFactory.cs" />
     <Compile Include="Assets\_Game\Editor\GameSceneBuilder.cs" />
+    <Compile Include="Assets\_Game\Editor\SpringtrapBuilder.cs" />
     <Compile Include="Assets\_Game\Editor\AudioBuilder.cs" />
     <Compile Include="Assets\_Game\Editor\BuilderData.cs" />
     <Compile Include="Assets\_Game\Editor\PlayFromMenu.cs" />
