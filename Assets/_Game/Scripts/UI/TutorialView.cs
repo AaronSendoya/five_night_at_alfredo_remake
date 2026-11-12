@@ -45,7 +45,7 @@ namespace Alfredo
             "Casilleros, mesas y la piscina de pelotas: toca <b>ESCONDERSE</b> y nadie te verá.\n\nPero el <b>aire</b> se acaba: sal a tiempo.",
             "<b>Mantén</b> el botón junto a una <b>rejilla</b> para entrar.\n\nEn el mapa, toca una sala con rejilla y saldrás allí. Dentro no te ven, pero el aire dura poco.",
             "En el monitor de la oficina toca una sala del mapa para ver su <b>cámara</b> (sin luz no funciona).\n\nCerca de una puerta, si el borde de la pantalla <b>late en rojo</b> y oyes pasos apagados, hay alguien al otro lado.",
-            "Cada uno tiene su truco. Al cruzar una puerta tienes un instante de margen.\n\nSi corres, te oyen. ¡Buena suerte!"
+            "Cada uno tiene su truco. Al cruzar una puerta tienes un instante de margen.\n\nSi corres más de 2 segundos, haces ruido y te oyen. ¡Buena suerte!"
         };
 
         int step;
@@ -433,7 +433,7 @@ namespace Alfredo
                         break;
                     case S.Lit:
                         fleeT += dt;
-                        battery01 = Mathf.Max(0f, battery01 - dt * 0.29f);
+                        battery01 = Mathf.Max(0f, battery01 - dt * 0.41f);
                         if (pressed) { Go(S.Approach); AudioManager.PlaySfx(Sfx.FlashlightOff); }
                         else if (battery01 <= 0.08f) { Go(S.Empty); AudioManager.PlaySfx(Sfx.BatteryEmpty); }
                         break;
@@ -441,7 +441,7 @@ namespace Alfredo
                         if (held || stateT > 3f) Go(S.Charging);
                         break;
                     case S.Charging:
-                        battery01 = Mathf.Min(1f, battery01 + dt * (held ? 0.32f : 0.18f));
+                        battery01 = Mathf.Min(1f, battery01 + dt * (held ? 0.15f : 0.08f));
                         if (battery01 >= 1f) Go(S.Approach);
                         break;
                 }
@@ -697,10 +697,10 @@ namespace Alfredo
                 string[] names = { "ALFREDO", "MATILDA", "BONGO", "RUFUS" };
                 string[] tips =
                 {
-                    "Desde la noche 2 te rastrea cada cierto tiempo, estés donde estés. Escóndete o usa una rejilla.",
+                    "Cuando ríe, embiste. Desde la noche 2 te busca donde estés: escóndete.",
                     "Va al panel a quemar fusibles. Vigila la luz.",
-                    "Patrulla sin descanso y te persigue al verte.",
-                    "Caza en los apagones. El más rápido: alúmbralo.",
+                    "Tiene el mejor oído: si corres, te oye desde 2 salas de distancia.",
+                    "Sale en los apagones y es el más rápido. Alúmbralo.",
                 };
                 for (int i = 0; i < 4; i++)
                 {

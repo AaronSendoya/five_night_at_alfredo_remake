@@ -13,14 +13,17 @@ namespace Alfredo
         [SerializeField] PlayerController player;
         [SerializeField] Light2D beam;
         [SerializeField] Light2D halo;
+        [Tooltip("Punto caliente en el centro del haz")]
+        [SerializeField] Light2D core;
         [SerializeField] LayerMask sightBlockers;
         [SerializeField] float batterySeconds = 45f;
         [SerializeField] float fullChargeSeconds = 3f;
-        [Tooltip("Nerfeo: la manivela recarga un 70 % más lento (tarda 1,7 veces más)")]
-        [SerializeField] float rechargeSlowdown = 1.7f;
-        [Tooltip("Nerfeo: encendida gasta un 30 % más de batería")]
-        [SerializeField] float drainMultiplier = 1.3f;
-        [SerializeField] float beamIntensity = 1.25f;
+        [Tooltip("Recarga completa = 3 s x 5 = 15 s")]
+        [SerializeField] float rechargeSlowdown = 5f;
+        [Tooltip("Batería llena encendida = 45 / 2,25 = 20 s")]
+        [SerializeField] float drainMultiplier = 2.25f;
+        [SerializeField] float beamIntensity = 2.3f;     // más brillante: en el apagón la sala queda casi negra
+        [SerializeField] float coreIntensity = 1.6f;
         [SerializeField] float lightHeight = 1.1f;
         [Tooltip("Tamaño de un píxel del sprite del jugador en unidades (escala / 32)")]
         [SerializeField] float spritePixel = 0.134f;
@@ -55,7 +58,7 @@ namespace Alfredo
             bool playing = gm != null && gm.IsPlaying;
             if (!HasFlashlight || !playing)
             {
-                if (IsCranking) { IsCranking = false; player.Unlock(this); AudioManager.StopLoop(Sfx.CrankLoop); }
+                if (IsCranking) { IsCranking = false; AudioManager.StopLoop(Sfx.CrankLoop); }
                 TouchInput.ConsumeFlashlight();
                 SetLights(HasFlashlight && IsOn ? CurrentIntensity() : 0f);
                 return;
@@ -69,8 +72,9 @@ namespace Alfredo
             if (crank != IsCranking)
             {
                 IsCranking = crank;
-                if (crank) { player.Lock(this); IsOn = false; AudioManager.PlayLoop(Sfx.CrankLoop); }
-                else { player.Unlock(this); AudioManager.StopLoop(Sfx.CrankLoop); }
+                // Se puede caminar mientras se gira la manivela (no correr: lo bloquea PlayerController).
+                if (crank) { IsOn = false; AudioManager.PlayLoop(Sfx.CrankLoop); }
+                else AudioManager.StopLoop(Sfx.CrankLoop);
             }
             if (IsCranking) battery = Mathf.Min(batterySeconds, battery + batterySeconds / (fullChargeSeconds * rechargeSlowdown) * Time.deltaTime);
 
@@ -125,8 +129,13 @@ namespace Alfredo
 
         void SetLights(float level)
         {
+            // Variación mínima constante (bombilla incandescente), no se nota como parpadeo.
+            if (level > 0f) level *= 1f + (Mathf.PerlinNoise(Time.time * 7f, 0.3f) - 0.5f) * 0.06f;
+            // Con la luz de la sala encendida el haz no satura la imagen; en la oscuridad brilla al máximo.
+            if (level > 0f && PowerSystem.Instance != null && PowerSystem.Instance.HasLight) level *= 0.45f;
             if (beam != null) { beam.enabled = level > 0f; beam.intensity = level * beamIntensity; }
-            if (halo != null) { halo.enabled = level > 0f; halo.intensity = level * 0.6f; }
+            if (core != null) { core.enabled = level > 0f; core.intensity = level * coreIntensity; }
+            if (halo != null) { halo.enabled = level > 0f; halo.intensity = level * 0.45f; }
         }
 
         /// <summary>True si el haz encendido alcanza ese punto (cono, distancia y sin pared en medio).</summary>

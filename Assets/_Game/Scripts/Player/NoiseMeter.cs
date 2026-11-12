@@ -11,11 +11,11 @@ namespace Alfredo
     [RequireComponent(typeof(PlayerController))]
     public class NoiseMeter : MonoBehaviour
     {
-        [SerializeField] float graceRunSeconds = 2.5f;   // los primeros 2,5 s corriendo no hacen ruido
-        [SerializeField] float riseSeconds = 3f;         // de verde a rojo corriendo sin parar
+        [SerializeField] float graceRunSeconds = 2f;     // los primeros 2 s corriendo no hacen ruido
+        [SerializeField] float riseSeconds = 1.2f;       // de verde a rojo: en rojo a los ~3,2 s corriendo
         [SerializeField] float fallPerSecond = 0.3f;     // baja al caminar o quedarse quieto
-        [SerializeField] float alertCooldown = 4f;       // si sigue en rojo, vuelve a avisar cada tanto
-        [SerializeField] float huntSeconds = 8f;         // cuánto lo buscan tras oírlo
+        [SerializeField] float alertCooldown = 2.5f;       // si sigue en rojo, vuelve a avisar cada tanto
+        [SerializeField] float huntSeconds = 12f;         // cuánto lo buscan tras oírlo
 
         PlayerController player;
         AnimatronicDirector director;
@@ -28,6 +28,15 @@ namespace Alfredo
 
         void Awake() => player = GetComponent<PlayerController>();
         void Start() => director = FindFirstObjectByType<AnimatronicDirector>();
+
+        /// <summary>Solo pruebas (F10): ruido al máximo.</summary>
+        public void DebugMaxNoise()
+        {
+            Noise01 = 1f; alertTimer = alertCooldown;
+            int heard = director != null ? director.NoiseAlert(player, huntSeconds) : 0;
+            HudMessages.Show(heard > 0 ? "¡Te oyeron! Vienen hacia ti" : "Demasiado ruido...");
+            SoundFalloff.Log($"Ruido al máximo (F10): lo oyeron {heard}", true);
+        }
 
         public void ResetNoise() { Noise01 = 0f; runTime = 0f; alertTimer = 0f; }
 
@@ -52,7 +61,7 @@ namespace Alfredo
             if (!tipShown && Noise01 > 0.05f)
             {
                 tipShown = true;
-                HudTips.Show("Correr hace ruido: en ROJO te oyen las salas cercanas. Camina.", true);
+                HudTips.Show("Si corres más de 2 segundos, haces ruido y te oyen.", true);
             }
 
             alertTimer -= dt;
@@ -60,7 +69,8 @@ namespace Alfredo
             {
                 alertTimer = alertCooldown;
                 int heard = director.NoiseAlert(player, huntSeconds);
-                HudMessages.Show(heard > 0 ? "¡Te oyeron! Hiciste demasiado ruido" : "Demasiado ruido...");
+                HudMessages.Show(heard > 0 ? "¡Te oyeron! Vienen hacia ti" : "Demasiado ruido...");
+                SoundFalloff.Log($"Ruido al máximo: lo oyeron {heard}", true);
             }
         }
     }

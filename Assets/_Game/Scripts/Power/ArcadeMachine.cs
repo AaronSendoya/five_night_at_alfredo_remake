@@ -29,8 +29,13 @@ namespace Alfredo
 
         public override void Interact(PlayerController player) => game.Open(player, this);
 
+        [Tooltip("Segundos sin que lo puedan atrapar al salir del minijuego")]
+        [SerializeField] float exitInvulnerableSeconds = 2f;
+
         public void Finished(bool won, PlayerController player)
         {
+            // Al cerrar la máquina un animatrónico pudo acercarse: 2 s para reaccionar.
+            if (player != null) player.GrantInvulnerability(exitInvulnerableSeconds);
             if (!won) return;
             cooldown = prizeCooldownSeconds;
             if (player.Inventory.AddFuse())

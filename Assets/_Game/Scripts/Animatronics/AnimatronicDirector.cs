@@ -75,6 +75,7 @@ namespace Alfredo
                 if (!dist.TryGetValue(zones.NearestZone(a.Motor.Position), out int rooms) || rooms > a.NoiseHearRooms) continue;
                 a.HearNoise(seconds);
                 heard++;
+                SoundFalloff.Log($"{a.DisplayName} oyó el ruido a {rooms} sala(s)", true);
             }
             return heard;
         }
@@ -113,8 +114,11 @@ namespace Alfredo
             // Registro de qué salas se han visitado hace poco (para repartir las patrullas).
             var zones = MapZones.Instance;
             if (zones == null) return;
+            bool anyAwake = false;
             foreach (var a in animatronics)
-                if (a.IsActive) { var z = zones.NearestZone(a.Motor.Position); if (z != null) lastVisit[z] = Time.time; }
+                if (a.IsActive) { anyAwake = true; var z = zones.NearestZone(a.Motor.Position); if (z != null) lastVisit[z] = Time.time; }
+            // El bucle de ambiente "de amenaza" suena solo cuando ya se levantó el primer animatrónico.
+            AudioManager.SetThreatAmbience(anyAwake);
         }
 
         /// <summary>Cuántos animatrónicos activos (sin contar a 'except') están en la zona o van hacia ella.</summary>

@@ -36,6 +36,7 @@ namespace Alfredo
                 HudMessages.Show(SpotNames[spot]);
             }
             if (Input.GetKeyDown(KeyCode.F7)) showInfo = !showInfo;
+            if (Input.GetKeyDown(KeyCode.F10) && player.TryGetComponent<NoiseMeter>(out var nm)) nm.DebugMaxNoise();
             if (Input.GetKeyDown(KeyCode.F8)) { AnimatronicBrain.DebugFreeze = !AnimatronicBrain.DebugFreeze; HudMessages.Show(AnimatronicBrain.DebugFreeze ? "Animatrónicos congelados" : "Animatrónicos libres"); }
             if (Input.GetKeyDown(KeyCode.F9))
             {

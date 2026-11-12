@@ -65,6 +65,10 @@ namespace Alfredo
             musicSource.volume = 0f;
             musicSource.Play();
             ambienceSource.clip = ambience;
+            ambienceSource.volume = 0f;
+            passiveSource = NewSource("AmbientePasivo", true);
+            passiveSource.clip = Resources.Load<AudioClip>("amb_pasivo");
+            passiveSource.volume = 0f;
             ApplyVolumes();
         }
 
@@ -88,10 +92,31 @@ namespace Alfredo
             if (!map.ContainsKey(id)) map[id] = new SfxClip { id = id, clip = clip, volume = volume };
         }
 
+        // Ambiente en dos capas: uno pasivo (sala vacía, zumbido, aire) mientras nadie se ha despertado
+        // y el bucle de siempre en cuanto se levanta el primer animatrónico de la noche.
+        AudioSource passiveSource;
+        bool ambienceOn, threatActive;
+
         void Update()
         {
             float target = tension * droneMaxVolume * SaveSystem.MusicVolume;
             musicSource.volume = Mathf.MoveTowards(musicSource.volume, target, Time.unscaledDeltaTime * 0.5f);
+
+            float baseVol = ambienceVolume * SaveSystem.AmbienceVolume;
+            float threatTarget = ambienceOn && threatActive ? baseVol : 0f;
+            float passiveTarget = ambienceOn && !threatActive ? baseVol * 0.9f : 0f;
+            if (ambienceSource.clip != null)
+            {
+                ambienceSource.volume = Mathf.MoveTowards(ambienceSource.volume, threatTarget, Time.unscaledDeltaTime * baseVol / 3f);
+                if (threatTarget > 0f && !ambienceSource.isPlaying) ambienceSource.Play();
+                if (threatTarget <= 0f && ambienceSource.volume <= 0.001f && ambienceSource.isPlaying) ambienceSource.Stop();
+            }
+            if (passiveSource != null && passiveSource.clip != null)
+            {
+                passiveSource.volume = Mathf.MoveTowards(passiveSource.volume, passiveTarget, Time.unscaledDeltaTime * baseVol / 3f);
+                if (passiveTarget > 0f && !passiveSource.isPlaying) passiveSource.Play();
+                if (passiveTarget <= 0f && passiveSource.volume <= 0.001f && passiveSource.isPlaying) passiveSource.Stop();
+            }
         }
 
         // ---------- API estática ----------
@@ -189,9 +214,15 @@ namespace Alfredo
 
         public static void SetAmbience(bool on)
         {
-            if (instance == null || instance.ambienceSource.clip == null) return;
-            if (on && !instance.ambienceSource.isPlaying) instance.ambienceSource.Play();
-            if (!on) instance.ambienceSource.Stop();
+            if (instance == null) return;
+            instance.ambienceOn = on;
+            if (!on) instance.threatActive = false;
+        }
+
+        /// <summary>true en cuanto hay al menos un animatrónico despierto: cambia del ambiente pasivo al de amenaza.</summary>
+        public static void SetThreatAmbience(bool active)
+        {
+            if (instance != null) instance.threatActive = active;
         }
 
         /// <summary>0 = silencio, 1 = máxima tensión (zumbido grave).</summary>
@@ -203,7 +234,6 @@ namespace Alfredo
         public static void ApplyVolumes()
         {
             if (instance == null) return;
-            instance.ambienceSource.volume = instance.ambienceVolume * SaveSystem.AmbienceVolume;
             instance.menuMusicSource.volume = instance.menuMusicVolume * SaveSystem.MusicVolume;
         }
     }

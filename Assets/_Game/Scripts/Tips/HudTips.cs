@@ -27,7 +27,7 @@ namespace Alfredo
         public static string For(AnimatronicBrain who)
         {
             if (who is AlfredoBrain a && a.IsTracking)
-                return "Alfredo te rastreaba: escóndete, entra a una ventila o cierra la puerta para perderlo.";
+                return "Cuando Alfredo te busca, escóndete o entra a una rejilla.";
             return For(who.Id);
         }
 
@@ -35,10 +35,10 @@ namespace Alfredo
         {
             switch (id)
             {
-                case AnimatronicId.Alfredo: return "Si oyes la risa de Alfredo, va a embestir: escóndete ya.";
-                case AnimatronicId.Matilda: return "¿Ollas cerca de Mantenimiento? Es Matilda: espera escondido.";
-                case AnimatronicId.Bongo: return "Guitarra fuerte = Bongo cerca. Rompe su vista y escóndete.";
-                default: return "Rufus caza a oscuras: apúntale con la linterna y no la gastes en vano.";
+                case AnimatronicId.Alfredo: return "Si oyes reír a Alfredo, escóndete.";
+                case AnimatronicId.Matilda: return "Matilda va al panel de fusibles. No vayas mientras esté ahí.";
+                case AnimatronicId.Bongo: return "Si oyes la guitarra fuerte, Bongo está cerca. Escóndete.";
+                default: return "En un apagón, alumbra a Rufus para que se vaya.";
             }
         }
 

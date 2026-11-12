@@ -59,6 +59,7 @@
     <Compile Include="Assets\_Game\Scripts\Power\ArcadeMachine.cs" />
     <Compile Include="Assets\_Game\Scripts\Audio\AmbientEvents.cs" />
     <Compile Include="Assets\_Game\Scripts\Power\FusePanel.cs" />
+    <Compile Include="Assets\_Game\Scripts\UI\ControlsEditor.cs" />
     <Compile Include="Assets\_Game\Scripts\Player\DoorDangerSense.cs" />
     <Compile Include="Assets\_Game\Scripts\Animatronics\AnimatronicBrain.cs" />
     <Compile Include="Assets\_Game\Scripts\Player\Inventory.cs" />
@@ -108,6 +109,7 @@
     <Compile Include="Assets\_Game\Scripts\UI\HudView.cs" />
     <Compile Include="Assets\_Game\Scripts\Core\DebugTools.cs" />
     <Compile Include="Assets\_Game\Scripts\Audio\ProceduralAudio.cs" />
+    <Compile Include="Assets\_Game\Scripts\UI\NewspaperIntro.cs" />
     <Compile Include="Assets\_Game\Scripts\Tips\HudTips.cs" />
     <Compile Include="Assets\_Game\Scripts\Audio\AudioManager.cs" />
     <Compile Include="Assets\_Game\Scripts\Power\PowerSystem.cs" />

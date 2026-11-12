@@ -178,7 +178,8 @@ namespace Alfredo
         }
 
         // ---- Risa con volumen según la distancia real al jugador ----
-        [SerializeField] float laughHearRange = 50f;
+        [SerializeField] float laughHearRange = 220f;   // ~2 salas; más lejos queda un hilo de risa
+        [SerializeField, Range(0f, 1f)] float laughFarVolume = 0.12f;
         AudioSource laughSource;
 
         void StartLaugh()
@@ -195,6 +196,7 @@ namespace Alfredo
             laughSource.clip = clip;
             UpdateLaughVolume();
             if (!laughSource.isPlaying) laughSource.Play();
+            SoundFalloff.Log($"Risa de Alfredo: vol {laughSource.volume:0.00}", true);
         }
 
         void StopLaugh()
@@ -205,8 +207,8 @@ namespace Alfredo
         void UpdateLaughVolume()
         {
             if (laughSource == null || player == null) return;
-            laughSource.volume = DistanceVolume(AnimatronicVoice.PathDistance(player.Position, motor.Position), laughHearRange) * SaveSystem.SfxVolume;
-            laughSource.panStereo = Mathf.Clamp((motor.Position.x - player.Position.x) / 18f, -0.8f, 0.8f);
+            laughSource.volume = SoundFalloff.Volume(AnimatronicVoice.PathDistance(player.Position, motor.Position), laughHearRange, laughFarVolume) * SaveSystem.SfxVolume;
+            laughSource.panStereo = SoundFalloff.Pan(motor.Position, player.Position);
         }
 
         /// <summary>Curva de volumen por distancia: casi nada a lo lejos, sube de forma progresiva al acercarse.</summary>

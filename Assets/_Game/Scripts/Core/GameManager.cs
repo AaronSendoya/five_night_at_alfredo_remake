@@ -75,6 +75,7 @@ namespace Alfredo
             NavGrid.Instance.IsWalkable(Vector2.zero); // construye la cuadrícula de rutas al cargar, no en mitad de la partida
             player.Teleport(playerSpawn.position, Facing.Down);
             zoneCamera.Snap();
+            ControlLayout.ApplySaved();   // botones de acción como los dejó el jugador
 
             if (Night.night == 1 && !SaveSystem.TutorialSeen) SetState(GameState.Tutorial);
             else StartCoroutine(IntroRoutine());
@@ -89,6 +90,8 @@ namespace Alfredo
 
         IEnumerator IntroRoutine()
         {
+            // Noche 1: recorte de periódico "Se busca personal" antes de empezar (tras el tutorial).
+            if (Night.night == 1) yield return NewspaperIntro.Play();
             SetState(GameState.Intro);
             AudioManager.PlaySfx(Sfx.NightStart);
             yield return new WaitForSeconds(introSeconds);

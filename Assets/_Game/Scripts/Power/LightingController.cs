@@ -11,8 +11,10 @@ namespace Alfredo
     {
         [SerializeField] Light2D globalLight;
         [SerializeField] float onIntensity = 0.75f;
-        [SerializeField] float flickerLowIntensity = 0.4f;
-        [SerializeField] float offIntensity = 0.13f;
+        [SerializeField] float flickerLowIntensity = 0.25f;
+        [Tooltip("Sin luz la sala casi no se ve: solo siluetas. La linterna es la única forma de ver bien")]
+        [SerializeField] float offIntensity = 0.035f;
+        [SerializeField] Color offColor = new Color(0.55f, 0.62f, 0.85f);   // tono frío de oscuridad
         [SerializeField] float blendSpeed = 4f;
         [Tooltip("Intensidad mientras se mira el monitor de cámaras (las salas son oscuras y no se distinguían)")]
         [SerializeField] float cameraIntensity = 1.25f;
@@ -71,6 +73,8 @@ namespace Alfredo
             float goal = target;
             if (CameraMonitor.AnyOpen && power.HasLight) { goal = cameraIntensity * (target / onIntensity); speed = Mathf.Max(speed, 12f); }
             globalLight.intensity = Mathf.MoveTowards(globalLight.intensity, goal, speed * Time.deltaTime);
+            float dark = Mathf.InverseLerp(onIntensity, offIntensity, globalLight.intensity);
+            globalLight.color = Color.Lerp(Color.white, offColor, dark);
             if (poweredLights != null)
                 foreach (var l in poweredLights) if (l != null) l.enabled = power.HasLight;
         }

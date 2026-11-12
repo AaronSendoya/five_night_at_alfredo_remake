@@ -105,6 +105,8 @@ namespace Alfredo
 
         /// <summary>Recién cruzó una puerta: ningún animatrónico puede atraparlo (0,5 s).</summary>
         public bool IsInvulnerable => Time.time < invulnerableUntil;
+        /// <summary>Nadie puede atraparlo durante unos segundos (p. ej. al terminar el minijuego del arcade).</summary>
+        public void GrantInvulnerability(float seconds) => invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + seconds);
         public bool IsWarping => warping;
         public float WarpCooldown => warpCooldown;
 
@@ -128,7 +130,8 @@ namespace Alfredo
             moveInput = CanMove ? TouchInput.Move : Vector2.zero;
             IsMoving = moveInput.sqrMagnitude > 0.01f;
 
-            bool wantsRun = IsMoving && TouchInput.RunHeld && stamina > 0f && exhaustedTimer <= 0f;
+            bool cranking = flashlight != null && flashlight.IsCranking;   // recargando la linterna: solo caminar
+            bool wantsRun = IsMoving && TouchInput.RunHeld && stamina > 0f && exhaustedTimer <= 0f && !cranking;
             if (wantsRun)
             {
                 stamina -= drainPerFrame * GameUnits.GmFps * dt;

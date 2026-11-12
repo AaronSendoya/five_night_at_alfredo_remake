@@ -60,7 +60,7 @@ namespace Alfredo
                 bannedUntil = now + BanSeconds;
                 AudioManager.PlaySfx(Sfx.Denied);
                 HudMessages.Show($"Escondites bloqueados {BanSeconds:0} s");
-                HudTips.Show("Te escondiste demasiado: escondites bloqueados 10 s. Muévete.", true);
+                HudTips.Show("Te escondiste muchas veces seguidas. Espera 10 segundos.", true);
                 return false;
             }
             recentEntries.Add(now);

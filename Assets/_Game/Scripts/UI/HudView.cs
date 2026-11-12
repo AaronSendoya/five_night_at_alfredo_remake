@@ -143,6 +143,15 @@ namespace Alfredo
             var target = interactor.Target;
             interactButton.SetActive(playing && target != null);
             if (interactHint != null) interactHint.SetActive(playing && target != null);
+            if (ControlsEditor.Editing)
+            {
+                // Editando los controles: se ven los 4 botones para poder colocarlos.
+                interactButton.SetActive(true);
+                if (flashlightButton != null) flashlightButton.SetActive(true);
+                if (crankButton != null) crankButton.SetActive(true);
+                if (interactHint != null) interactHint.SetActive(false);
+                return;
+            }
             if (target != null)
             {
                 bool usable = interactor.TargetUsable;

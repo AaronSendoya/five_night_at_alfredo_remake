@@ -234,9 +234,13 @@ namespace Alfredo.EditorTools
             ui.overMenu = UiFactory.AddButton("Menu", over.transform, "Menú", C, new Vector2(260f, -190f), new Vector2(480f, 110f), null);
 
             var pause = UiFactory.FullPanel("Pausa", screensRt, new Color(0f, 0f, 0f, 0.85f));
-            UiFactory.AddText("Titulo", pause.transform, "PAUSA", 96, C, new Vector2(0f, 180f), new Vector2(900f, 130f), TextAnchor.MiddleCenter, null, FontStyle.Bold);
-            ui.pauseResume = UiFactory.AddButton("Continuar", pause.transform, "Continuar", C, new Vector2(0f, 10f), new Vector2(480f, 110f), null, 40, UiFactory.Accent);
-            ui.pauseMenu = UiFactory.AddButton("Menu", pause.transform, "Salir al menú", C, new Vector2(0f, -130f), new Vector2(480f, 110f), null);
+            UiFactory.AddText("Titulo", pause.transform, "PAUSA", 96, C, new Vector2(0f, 240f), new Vector2(900f, 130f), TextAnchor.MiddleCenter, null, FontStyle.Bold);
+            ui.pauseResume = UiFactory.AddButton("Continuar", pause.transform, "Continuar", C, new Vector2(0f, 80f), new Vector2(480f, 110f), null, 40, UiFactory.Accent);
+            var pauseControls = UiFactory.AddButton("Controles", pause.transform, "Controles", C, new Vector2(0f, -55f), new Vector2(480f, 110f), null);
+            ui.pauseMenu = UiFactory.AddButton("Menu", pause.transform, "Salir al menú", C, new Vector2(0f, -190f), new Vector2(480f, 110f), null);
+            var controlsEditor = pause.gameObject.AddComponent<ControlsEditor>();
+            BuilderUtil.SetRef(controlsEditor, "pausePanel", pause.gameObject);
+            UnityEventTools.AddPersistentListener(pauseControls.onClick, controlsEditor.Open);
 
             BuilderUtil.SetRef(ui.screens, "introPanel", intro.gameObject);
             BuilderUtil.SetRef(ui.screens, "introNightText", introNight);

@@ -146,15 +146,26 @@ namespace Alfredo.EditorTools
             var flashGo = new GameObject("Linterna");
             var flashlight = flashGo.AddComponent<Flashlight>();
             BuilderUtil.SetRef(player, "flashlight", flashlight);
-            var beam = NewLight("Haz", flashGo.transform, Light2D.LightType.Point, 1.1f, new Color(1f, 0.95f, 0.8f));
+            var beam = NewLight("Haz", flashGo.transform, Light2D.LightType.Point, 1.1f, new Color(1f, 0.93f, 0.78f));
             // Haz más largo y ancho; Flashlight.Illuminates usa estos mismos valores (lo que ves es lo que alumbra a Rufus).
             beam.pointLightOuterRadius = 38f;
             beam.pointLightInnerRadius = 6f;
             beam.pointLightOuterAngle = 52f;
             beam.pointLightInnerAngle = 28f;
-            var halo = NewLight("Halo", flashGo.transform, Light2D.LightType.Point, 0.6f, new Color(1f, 0.95f, 0.8f));
-            halo.pointLightOuterRadius = 3.5f;
+            beam.falloffIntensity = 0.55f;
+            // Centro del haz más intenso (como una linterna real: punto caliente en el medio y bordes suaves).
+            var core = NewLight("Centro del haz", flashGo.transform, Light2D.LightType.Point, 1f, new Color(1f, 0.97f, 0.88f));
+            core.pointLightOuterRadius = 32f;
+            core.pointLightInnerRadius = 3f;
+            core.pointLightOuterAngle = 24f;
+            core.pointLightInnerAngle = 8f;
+            core.falloffIntensity = 0.7f;
+            // Rebote suave de la luz alrededor del jugador.
+            var halo = NewLight("Halo", flashGo.transform, Light2D.LightType.Point, 0.6f, new Color(1f, 0.93f, 0.8f));
+            halo.pointLightOuterRadius = 6f;
             halo.pointLightInnerRadius = 0.5f;
+            halo.falloffIntensity = 0.8f;
+            BuilderUtil.SetRef(flashlight, "core", core);
             BuilderUtil.SetRef(flashlight, "player", player);
             BuilderUtil.SetValue(flashlight, "lightHeight", p => p.floatValue = 1.1f * PlayerScale / 3.6f);
             BuilderUtil.SetValue(flashlight, "spritePixel", p => p.floatValue = PlayerScale / 32f);
@@ -584,19 +595,22 @@ namespace Alfredo.EditorTools
             BuilderUtil.SetRef(voice, "clip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/" + moveSound));
             BuilderUtil.SetRef(voice, "huntClip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Game/Audio/" + moveSound.Replace("mov_", "caza_")));
             var stepClips = new List<Object>();
+            string stepWho = moveSound.Replace("mov_", "").Replace(".wav", "");
             for (int i = 1; i <= 4; i++)
             {
-                var c = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/paso_animatronico_{i}.wav");
+                // Pasos propios si existen (Matilda: pisadas pesadas de metal); si no, los comunes.
+                var c = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/paso_{stepWho}_{i}.wav")
+                     ?? AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/paso_animatronico_{i}.wav");
                 if (c != null) stepClips.Add(c);
             }
             BuilderUtil.SetRefs(voice, "steps", stepClips.ToArray());
             string whoStep = moveSound.Replace("mov_", "").Replace(".wav", "");
-            float pitch = whoStep == "alfredo" ? 0.82f : whoStep == "matilda" ? 1.1f : whoStep == "rufus" ? 1.15f : 0.95f;
+            float pitch = whoStep == "alfredo" ? 0.82f : whoStep == "matilda" ? 1f : whoStep == "rufus" ? 1.15f : 0.95f;
             BuilderUtil.SetValue(voice, "stepPitch", sp => sp.floatValue = pitch);
             string who = moveSound.Replace("mov_", "").Replace(".wav", "");
             BuilderUtil.SetRef(brain, "scream", FindScream(who));
             var lines = new System.Collections.Generic.List<Object>();
-            for (int i = 1; i <= 3; i++)
+            for (int i = 1; i <= 4; i++)
             {
                 var c = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/frase_{who}_{i}.wav");
                 if (c != null) lines.Add(c);

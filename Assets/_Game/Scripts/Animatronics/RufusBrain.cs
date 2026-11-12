@@ -26,7 +26,8 @@ namespace Alfredo
         [SerializeField] float songEveryGameMinutes = 15f;
         [Tooltip("Velocidad extra al PATRULLAR mientras suena (no afecta a la caza)")]
         [SerializeField] float songSpeedMultiplier = 1.3f;
-        [SerializeField] float songHearRange = 50f;
+        [SerializeField] float songHearRange = 220f;     // ~2 salas; más lejos queda un hilo de volumen
+        [SerializeField, Range(0f, 1f)] float songFarVolume = 0.1f;
         [SerializeField, Range(0f, 1f)] float songVolume = 1f;
 
         float huntTimer;
@@ -67,8 +68,16 @@ namespace Alfredo
             }
             songSource.clip = songClip;
             songSource.Play();
+            UpdateSongVolumeNow();
+            SoundFalloff.Log($"Canción de Rufus: vol {songSource.volume:0.00}", true);
             songLeft = songClip.length;
             songTimer = SongInterval;
+        }
+
+        void UpdateSongVolumeNow()
+        {
+            songLeft = songClip.length;
+            UpdateSongVolume();
         }
 
         void StopSong()
@@ -82,8 +91,8 @@ namespace Alfredo
         {
             if (songSource == null || !SongPlaying || player == null) return;
             float d = AnimatronicVoice.PathDistance(player.Position, motor.Position);
-            songSource.volume = AlfredoBrain.DistanceVolume(d, songHearRange) * songVolume * SaveSystem.SfxVolume;
-            songSource.panStereo = Mathf.Clamp((motor.Position.x - player.Position.x) / 18f, -0.8f, 0.8f);
+            songSource.volume = SoundFalloff.Volume(d, songHearRange, songFarVolume) * songVolume * SaveSystem.SfxVolume;
+            songSource.panStereo = SoundFalloff.Pan(motor.Position, player.Position);
         }
 
         protected override void OnResetToHome()
